@@ -156,9 +156,13 @@ export default function BuildingMap({
       tileLayersRef.current = [sat, roads, labels];
     }
 
-    // Bring marker layer back on top
+    // Bring marker layer back on top by re-adding it
     if (layerGroupRef.current) {
-      layerGroupRef.current.bringToFront();
+      layerGroupRef.current.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          layer.setZIndexOffset(1000);
+        }
+      });
     }
   }, [tileMode]);
 
