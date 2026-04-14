@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Search, Building2, Settings, X } from "lucide-react";
+import { Search, Building2, Settings, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
