@@ -24,6 +24,9 @@ export interface Building {
   last_data_sync: string | null;
 }
 
+// Lightweight version for map/list (skip heavy fields)
+const LIST_FIELDS = "id,name,address,city,state,lat,lng,building_type,unit_count,data_source";
+
 export interface Contact {
   id: number;
   building_id: number;
@@ -74,21 +77,32 @@ export interface Stats {
 // ─── Hooks ──────────────────────────────────────────────────────────────────
 
 // Fetch buildings within map bounds + optional type filter
+// Only selects lightweight fields to minimize payload
 export function useMapBuildings(bounds: MapBounds | null, type?: string) {
+  // Round bounds to 3 decimal places (~100m) to stabilize the query key
+  // This prevents refetches on tiny sub-pixel map movements
+  const stableBounds = bounds ? {
+    north: Math.round(bounds.north * 1000) / 1000,
+    south: Math.round(bounds.south * 1000) / 1000,
+    east: Math.round(bounds.east * 1000) / 1000,
+    west: Math.round(bounds.west * 1000) / 1000,
+  } : null;
+
   return useQuery<Building[]>({
-    queryKey: ["buildings", bounds, type],
+    queryKey: ["buildings", stableBounds, type],
     queryFn: async () => {
       let query = supabase
         .from("ba_buildings")
-        .select("*")
+        .select(LIST_FIELDS)
         .limit(5000);
 
-      if (bounds) {
+      if (stableBounds) {
+        // Add a small buffer (~0.002 deg ≈ 200m) so markers don't pop at edges
         query = query
-          .gte("lat", bounds.south)
-          .lte("lat", bounds.north)
-          .gte("lng", bounds.west)
-          .lte("lng", bounds.east);
+          .gte("lat", stableBounds.south - 0.002)
+          .lte("lat", stableBounds.north + 0.002)
+          .gte("lng", stableBounds.west - 0.002)
+          .lte("lng", stableBounds.east + 0.002);
       }
 
       if (type && type !== "all") {
@@ -97,10 +111,12 @@ export function useMapBuildings(bounds: MapBounds | null, type?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Building[];
     },
     enabled: true,
     staleTime: 30_000,
+    // Keep previous data visible while refetching on pan
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -111,11 +127,11 @@ export function useSearchBuildings(query: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ba_buildings")
-        .select("*")
+        .select(LIST_FIELDS)
         .or(`name.ilike.%${query}%,address.ilike.%${query}%,owner_name.ilike.%${query}%`)
-        .limit(50);
+        .limit(100);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Building[];
     },
     enabled: query.length >= 2,
     staleTime: 30_000,
@@ -291,7 +307,6 @@ export function useDataSourceCounts() {
   return useQuery<DataSourceCount[]>({
     queryKey: ["data-source-counts"],
     queryFn: async () => {
-      // We query distinct data_source values and count per source
       const sources = ["metrogis", "rental-license", "hud", "community"];
       const results: DataSourceCount[] = [];
       for (const source of sources) {

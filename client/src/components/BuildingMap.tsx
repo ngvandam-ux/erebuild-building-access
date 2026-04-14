@@ -5,7 +5,9 @@ import { Map as MapIcon, Satellite } from "lucide-react";
 import type { Building } from "@/hooks/useBuildings";
 import type { MapBounds } from "@/hooks/useBuildings";
 
-// ─── Helper: building type → marker CSS class ───────────────────────────────
+// ─── Cached DivIcon pool (avoid creating new icons on every render) ──────────
+const iconCache = new Map<string, L.DivIcon>();
+
 function markerClass(type: string | null | undefined): string {
   switch (type) {
     case "apartment":  return "marker-apartment";
@@ -21,18 +23,24 @@ function markerClass(type: string | null | undefined): string {
   }
 }
 
-function createDivIcon(type: string | null | undefined, selected: boolean): L.DivIcon {
-  return L.divIcon({
-    className: "",
-    html: `<div class="map-marker ${markerClass(type)}${selected ? " selected" : ""}"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
+function getCachedIcon(type: string | null | undefined, selected: boolean): L.DivIcon {
+  const key = `${type ?? "default"}-${selected ? "s" : "n"}`;
+  let icon = iconCache.get(key);
+  if (!icon) {
+    icon = L.divIcon({
+      className: "",
+      html: `<div class="map-marker ${markerClass(type)}${selected ? " selected" : ""}"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    iconCache.set(key, icon);
+  }
+  return icon;
 }
 
 type TileMode = "street" | "satellite";
 
-// ─── Main map component (pure Leaflet + markercluster) ───────────────────────
+// ─── Main map component ──────────────────────────────────────────────────────
 interface BuildingMapProps {
   buildings: Building[];
   selectedBuilding: Building | null;
@@ -50,10 +58,13 @@ export default function BuildingMap({
   const mapRef = useRef<L.Map | null>(null);
   const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
+  const buildingMapRef = useRef<Map<number, Building>>(new Map());
   const tileLayersRef = useRef<L.TileLayer[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onBoundsChangeRef = useRef(onBoundsChange);
   const onSelectBuildingRef = useRef(onSelectBuilding);
+  const selectedIdRef = useRef<number | null>(null);
+  const prevSelectedIdRef = useRef<number | null>(null);
   const [tileMode, setTileMode] = useState<TileMode>("street");
 
   // Keep refs current
@@ -70,7 +81,6 @@ export default function BuildingMap({
       zoomControl: true,
     });
 
-    // Default: CARTO Voyager (clean street map)
     const streetLayer = L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
       {
@@ -83,7 +93,6 @@ export default function BuildingMap({
     streetLayer.addTo(map);
     tileLayersRef.current = [streetLayer];
 
-    // ── Create MarkerClusterGroup with Erebuild-branded styling ──
     const clusterGroup = L.markerClusterGroup({
       maxClusterRadius: 50,
       spiderfyOnMaxZoom: true,
@@ -91,8 +100,9 @@ export default function BuildingMap({
       zoomToBoundsOnClick: true,
       disableClusteringAtZoom: 17,
       chunkedLoading: true,
-      chunkInterval: 100,
-      chunkDelay: 20,
+      chunkInterval: 200,
+      chunkDelay: 50,
+      animate: false,
       iconCreateFunction: (cluster: L.MarkerCluster) => {
         const count = cluster.getChildCount();
         let size = "small";
@@ -121,13 +131,11 @@ export default function BuildingMap({
           east: b.getEast(),
           west: b.getWest(),
         });
-      }, 300);
+      }, 400);  // longer debounce to reduce query thrash
     };
 
     map.on("moveend", emitBounds);
     map.on("zoomend", emitBounds);
-
-    // Emit initial bounds after map is ready
     map.whenReady(() => emitBounds());
 
     mapRef.current = map;
@@ -138,15 +146,15 @@ export default function BuildingMap({
       mapRef.current = null;
       clusterGroupRef.current = null;
       markersRef.current.clear();
+      buildingMapRef.current.clear();
     };
   }, []);
 
-  // ── Switch tiles when tileMode changes ──
+  // ── Switch tiles ──
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Remove existing tile layers
     for (const layer of tileLayersRef.current) {
       map.removeLayer(layer);
     }
@@ -164,7 +172,6 @@ export default function BuildingMap({
       street.addTo(map);
       tileLayersRef.current = [street];
     } else {
-      // Satellite + road/label overlays
       const sat = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         { attribution: "Tiles &copy; Esri", maxZoom: 19 }
@@ -184,46 +191,48 @@ export default function BuildingMap({
     }
   }, [tileMode]);
 
-  // ── Update markers when buildings change ──
+  // ── Update markers when buildings change (the ONLY marker effect) ──
   useEffect(() => {
     const clusterGroup = clusterGroupRef.current;
     if (!clusterGroup) return;
 
     const prev = markersRef.current;
+    const bMap = buildingMapRef.current;
     const currentIds = new Set(buildings.map((b) => b.id));
+    const selId = selectedBuilding?.id ?? null;
 
-    // Remove stale markers
+    // Remove stale markers in batch
     const toRemove: L.Marker[] = [];
     for (const [id, marker] of prev.entries()) {
       if (!currentIds.has(id)) {
         toRemove.push(marker);
         prev.delete(id);
+        bMap.delete(id);
       }
     }
     if (toRemove.length > 0) {
       clusterGroup.removeLayers(toRemove);
     }
 
-    // Add new markers (batch for performance)
+    // Add new markers in batch
     const toAdd: L.Marker[] = [];
     for (const building of buildings) {
-      const isSelected = building.id === selectedBuilding?.id;
+      bMap.set(building.id, building);
       const existing = prev.get(building.id);
 
-      if (existing) {
-        existing.setIcon(createDivIcon(building.building_type, isSelected));
-      } else {
+      if (!existing) {
         const marker = L.marker([building.lat, building.lng], {
-          icon: createDivIcon(building.building_type, isSelected),
+          icon: getCachedIcon(building.building_type, building.id === selId),
         });
 
-        marker.on("click", () => onSelectBuildingRef.current(building));
+        // Use a closure-free click handler that reads from ref
+        marker.on("click", () => {
+          const b = buildingMapRef.current.get(building.id);
+          if (b) onSelectBuildingRef.current(b);
+        });
 
         const label = building.name ?? building.address;
-        marker.bindTooltip(label, {
-          direction: "top",
-          offset: [0, -8],
-        });
+        marker.bindTooltip(label, { direction: "top", offset: [0, -8] });
 
         prev.set(building.id, marker);
         toAdd.push(marker);
@@ -233,21 +242,39 @@ export default function BuildingMap({
     if (toAdd.length > 0) {
       clusterGroup.addLayers(toAdd);
     }
-  }, [buildings, selectedBuilding?.id]);
+  }, [buildings]);  // only re-run when the buildings array changes, NOT on selection
 
-  // ── Update icon when selection changes (without full re-render) ──
+  // ── Lightweight selection highlight (only touches 2 markers: old + new) ──
   useEffect(() => {
     const prev = markersRef.current;
-    for (const [id, marker] of prev.entries()) {
-      const building = buildings.find((b) => b.id === id);
-      if (building) {
-        marker.setIcon(createDivIcon(building.building_type, id === selectedBuilding?.id));
+    const bMap = buildingMapRef.current;
+    const newId = selectedBuilding?.id ?? null;
+    const oldId = selectedIdRef.current;
+
+    if (newId === oldId) return;
+
+    // Un-highlight old
+    if (oldId !== null) {
+      const oldMarker = prev.get(oldId);
+      const oldBuilding = bMap.get(oldId);
+      if (oldMarker && oldBuilding) {
+        oldMarker.setIcon(getCachedIcon(oldBuilding.building_type, false));
       }
     }
-  }, [selectedBuilding?.id, buildings]);
+
+    // Highlight new
+    if (newId !== null) {
+      const newMarker = prev.get(newId);
+      const newBuilding = bMap.get(newId);
+      if (newMarker && newBuilding) {
+        newMarker.setIcon(getCachedIcon(newBuilding.building_type, true));
+      }
+    }
+
+    selectedIdRef.current = newId;
+  }, [selectedBuilding?.id]);
 
   // ── Fly to selected building ──
-  const prevSelectedIdRef = useRef<number | null>(null);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedBuilding) return;
@@ -266,7 +293,6 @@ export default function BuildingMap({
         data-testid="leaflet-map"
       />
 
-      {/* ── Tile layer toggle ── */}
       <div className="tile-toggle" data-testid="tile-toggle">
         <button
           className={`tile-toggle-btn${tileMode === "street" ? " active" : ""}`}

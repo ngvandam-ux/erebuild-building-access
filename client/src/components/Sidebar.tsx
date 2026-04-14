@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, memo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Search, Building2, Settings, X, Loader2, ArrowUpDown, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -187,14 +187,14 @@ function SortDropdown({ sortKey, onSortChange }: { sortKey: SortKey; onSortChang
   );
 }
 
-// ─── Building list item ────────────────────────────────────────────────────
+// ─── Building list item (memoized) ──────────────────────────────────────────
 interface BuildingRowProps {
   building: Building;
   selected: boolean;
   onClick: () => void;
 }
 
-function BuildingRow({ building, selected, onClick }: BuildingRowProps) {
+const BuildingRow = memo(function BuildingRow({ building, selected, onClick }: BuildingRowProps) {
   const dotClass = TYPE_DOT[building.building_type ?? ""] ?? "bg-slate-400";
   const displayName = building.name ?? building.address;
   const subLine = building.name ? building.address : null;
@@ -210,7 +210,6 @@ function BuildingRow({ building, selected, onClick }: BuildingRowProps) {
       data-testid={`row-building-${building.id}`}
     >
       <div className="flex items-start gap-2.5 min-w-0">
-        {/* Type dot */}
         <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dotClass}`} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate leading-tight">{displayName}</p>
@@ -235,6 +234,70 @@ function BuildingRow({ building, selected, onClick }: BuildingRowProps) {
         </div>
       </div>
     </button>
+  );
+});
+
+// ─── Virtualized building list ────────────────────────────────────────────
+function VirtualBuildingList({
+  buildings,
+  selectedId,
+  onSelect,
+}: {
+  buildings: Building[];
+  selectedId: number | null;
+  onSelect: (b: Building) => void;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: buildings.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 76, // approx row height
+    overscan: 10,
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      className="flex-1 min-h-0 overflow-y-auto sidebar-scroll"
+      data-testid="building-list-scroll"
+    >
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        <div
+          className="px-2"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            transform: `translateY(${virtualizer.getVirtualItems()[0]?.start ?? 0}px)`,
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const building = buildings[virtualRow.index];
+            return (
+              <div
+                key={building.id}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+              >
+                <BuildingRow
+                  building={building}
+                  selected={building.id === selectedId}
+                  onClick={() => onSelect(building)}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -297,7 +360,6 @@ export default function Sidebar({
     searchDebounceRef.current = setTimeout(() => setDebouncedSearch(val), 300);
   }, []);
 
-  // Decide whether to show search results or map-bounded list
   const isSearching = debouncedSearch.length >= 2;
 
   const { data: mapBuildings, isLoading: mapLoading } = useMapBuildings(
@@ -315,10 +377,10 @@ export default function Sidebar({
   const isLoading = isSearching ? searchLoading : mapLoading;
 
   // Notify parent of building list changes for map markers
-  const prevBuildingsRef = useRef<Building[]>([]);
-  if (rawBuildings !== prevBuildingsRef.current) {
-    prevBuildingsRef.current = rawBuildings;
-    // Schedule for next microtask to avoid setState during render
+  // Use a stable ref comparison to avoid unnecessary re-renders
+  const prevRawRef = useRef<Building[]>([]);
+  if (rawBuildings !== prevRawRef.current) {
+    prevRawRef.current = rawBuildings;
     Promise.resolve().then(() => onMapBuildings(rawBuildings));
   }
 
@@ -328,7 +390,6 @@ export default function Sidebar({
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-2 px-3 py-3 border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2">
-          {/* Erebuild logo */}
           <svg
             width="28"
             height="28"
@@ -351,7 +412,6 @@ export default function Sidebar({
         <DataSettings />
       </div>
 
-      {/* ── When a building is selected, show detail panel ── */}
       {selectedBuilding ? (
         <div className="flex flex-col flex-1 min-h-0">
           <BuildingDetail
@@ -420,46 +480,39 @@ export default function Sidebar({
                 <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
               ) : (
                 <span className="text-[11px] text-muted-foreground tabular-nums" data-testid="text-result-count">
-                  {buildings.length}
+                  {buildings.length.toLocaleString()}
                 </span>
               )}
             </div>
           </div>
 
-          {/* ── Building list ── */}
-          <ScrollArea className="flex-1 min-h-0 sidebar-scroll">
-            <div className="px-2 pb-2 space-y-0.5">
-              {isLoading ? (
-                <>
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="px-3 py-2.5">
-                      <Skeleton className="h-4 w-4/5 mb-1.5 rounded" />
-                      <Skeleton className="h-3 w-3/5 rounded" />
-                    </div>
-                  ))}
-                </>
-              ) : buildings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-                  <Building2 className="w-8 h-8 text-muted-foreground/40 mb-2" />
-                  <p className="text-sm text-muted-foreground">No buildings found</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    {isSearching
-                      ? "Try a different search term"
-                      : "Zoom in or pan the map to see buildings in this area"}
-                  </p>
+          {/* ── Building list (virtualized) ── */}
+          {isLoading ? (
+            <div className="flex-1 px-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="px-3 py-2.5">
+                  <Skeleton className="h-4 w-4/5 mb-1.5 rounded" />
+                  <Skeleton className="h-3 w-3/5 rounded" />
                 </div>
-              ) : (
-                buildings.map((building) => (
-                  <BuildingRow
-                    key={building.id}
-                    building={building}
-                    selected={selectedBuilding?.id === building.id}
-                    onClick={() => onSelectBuilding(building)}
-                  />
-                ))
-              )}
+              ))}
             </div>
-          </ScrollArea>
+          ) : buildings.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-10 text-center px-4">
+              <Building2 className="w-8 h-8 text-muted-foreground/40 mb-2" />
+              <p className="text-sm text-muted-foreground">No buildings found</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                {isSearching
+                  ? "Try a different search term"
+                  : "Zoom in or pan the map to see buildings in this area"}
+              </p>
+            </div>
+          ) : (
+            <VirtualBuildingList
+              buildings={buildings}
+              selectedId={selectedBuilding?.id ?? null}
+              onSelect={onSelectBuilding}
+            />
+          )}
 
           {/* ── Stats bar ── */}
           <StatsBar />
