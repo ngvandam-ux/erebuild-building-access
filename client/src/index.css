@@ -1,0 +1,283 @@
+@import 'leaflet/dist/leaflet.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Erebuild brand — dark-first, gold accent (#D4A547) on navy (#0a101e) */
+:root {
+  --button-outline: rgba(255, 255, 255, 0.1);
+  --badge-outline: rgba(255, 255, 255, 0.05);
+  --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255, 255, 255, 0.04);
+  --elevate-2: rgba(255, 255, 255, 0.09);
+  --background: 220 40% 6%;
+  --foreground: 36 17% 88%;
+  --border: 220 30% 14%;
+  --card: 220 30% 9%;
+  --card-foreground: 36 17% 88%;
+  --card-border: 220 30% 12%;
+  --sidebar: 220 35% 7%;
+  --sidebar-foreground: 36 17% 88%;
+  --sidebar-border: 220 30% 13%;
+  --sidebar-primary: 40 56% 55%;
+  --sidebar-primary-foreground: 220 40% 6%;
+  --sidebar-accent: 220 30% 14%;
+  --sidebar-accent-foreground: 36 17% 88%;
+  --sidebar-ring: 40 56% 55%;
+  --popover: 220 30% 10%;
+  --popover-foreground: 36 17% 88%;
+  --popover-border: 220 30% 15%;
+  --primary: 40 56% 55%;
+  --primary-foreground: 220 40% 6%;
+  --secondary: 220 30% 15%;
+  --secondary-foreground: 36 17% 88%;
+  --muted: 220 30% 13%;
+  --muted-foreground: 36 12% 50%;
+  --accent: 220 30% 14%;
+  --accent-foreground: 36 17% 88%;
+  --destructive: 0 72% 50%;
+  --destructive-foreground: 0 0% 98%;
+  --input: 220 30% 20%;
+  --ring: 40 56% 55%;
+  --chart-1: 40 56% 55%;
+  --chart-2: 142 70% 55%;
+  --chart-3: 220 60% 60%;
+  --chart-4: 280 55% 60%;
+  --chart-5: 0 72% 55%;
+  --font-sans: Inter, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.125rem;
+  --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0);
+  --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0);
+  --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0), 0px 1px 2px -1px hsl(0 0% 0% / 0);
+  --shadow: 0px 2px 0px 0px hsl(0 0% 0% / 0), 0px 1px 2px -1px hsl(0 0% 0% / 0);
+  --shadow-md: 0px 2px 0px 0px hsl(0 0% 0% / 0), 0px 2px 4px -1px hsl(0 0% 0% / 0);
+  --shadow-lg: 0px 2px 0px 0px hsl(0 0% 0% / 0), 0px 4px 6px -1px hsl(0 0% 0% / 0);
+  --shadow-xl: 0px 2px 0px 0px hsl(0 0% 0% / 0), 0px 8px 10px -1px hsl(0 0% 0% / 0);
+  --shadow-2xl: 0px 2px 0px 0px hsl(0 0% 0% / 0);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Fallback for older browsers */
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-primary-border: hsl(
+    from hsl(var(--sidebar-primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --sidebar-accent-border: hsl(
+    from hsl(var(--sidebar-accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+
+  --primary-border: hsl(var(--primary));
+  --primary-border: hsl(
+    from hsl(var(--primary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+
+  --secondary-border: hsl(var(--secondary));
+  --secondary-border: hsl(
+    from hsl(var(--secondary)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+
+  --muted-border: hsl(var(--muted));
+  --muted-border: hsl(
+    from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+
+  --accent-border: hsl(var(--accent));
+  --accent-border: hsl(
+    from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+
+  --destructive-border: hsl(var(--destructive));
+  --destructive-border: hsl(
+    from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha
+  );
+}
+
+/* No .dark override needed — Erebuild is dark-first, :root IS the dark theme */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/**
+ * Using the elevate system.
+ * Automatic contrast adjustment.
+ */
+@layer utilities {
+  /* Hide ugly search cancel button in Chrome until we can style it properly */
+  input[type='search']::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  /* Placeholder styling for contentEditable div */
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+  }
+
+  .no-default-hover-elevate {
+  }
+
+  .no-default-active-elevate {
+  }
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}
+
+/* ─── Leaflet map overrides ─── */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #1a2e1a;
+  font-family: var(--font-sans);
+  z-index: 0;
+}
+
+/* Leaflet attribution */
+.leaflet-control-attribution {
+  font-size: 10px;
+  background: hsl(var(--background) / 0.85) !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Leaflet zoom controls */
+.leaflet-control-zoom a {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: hsl(var(--accent)) !important;
+}
+
+/* ─── Custom div markers ─── */
+.map-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.map-marker:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+.map-marker.selected {
+  transform: scale(1.8);
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(212, 165, 71, 0.9), 0 0 14px rgba(212, 165, 71, 0.5), 0 0 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Building type marker colors — Erebuild palette on dark tiles */
+.marker-apartment  { background: #D4A547; }  /* erebuild gold */
+.marker-commercial { background: #5B9BD5; }  /* steel blue */
+.marker-office     { background: #9B8EC4; }  /* muted purple */
+.marker-industrial { background: #7C8A96; }  /* slate */
+.marker-government { background: #4ADE80; }  /* success green */
+.marker-school     { background: #34D399; }  /* emerald */
+.marker-hospital   { background: #F87171; }  /* red */
+.marker-retail     { background: #C17A2E; }  /* erebuild gold-hover */
+.marker-mixed-use  { background: #C084FC; }  /* violet */
+.marker-default    { background: #5A5854; }  /* erebuild text-muted */
+
+/* ─── Leaflet popup overrides ─── */
+.leaflet-popup-content-wrapper {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: 1px solid hsl(var(--card-border)) !important;
+  border-radius: 0.375rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: hsl(var(--card)) !important;
+}
+
+/* ─── Scrollbar styling ─── */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 2px;
+}

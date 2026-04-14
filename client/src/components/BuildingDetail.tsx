@@ -1,0 +1,376 @@
+import { useState } from "react";
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  CheckCircle2,
+  Circle,
+  Plus,
+  ThumbsUp,
+  Building2,
+  MapPin,
+  Users,
+  Calendar,
+  Ruler,
+  User,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useBuildingDetail, useVerifyContact, useUpvoteNote } from "@/hooks/useBuildings";
+import type { Building } from "@/hooks/useBuildings";
+import AddContactForm from "./AddContactForm";
+import AddNoteForm from "./AddNoteForm";
+
+// ─── Building type display config ──────────────────────────────────────────
+const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  apartment:  { label: "Apartment",  color: "bg-[#D4A547]/15 text-[#D4A547]" },
+  commercial: { label: "Commercial", color: "bg-[#5B9BD5]/15 text-[#5B9BD5]" },
+  office:     { label: "Office",     color: "bg-[#9B8EC4]/15 text-[#9B8EC4]" },
+  industrial: { label: "Industrial", color: "bg-[#7C8A96]/15 text-[#7C8A96]" },
+  government: { label: "Government", color: "bg-[#4ADE80]/15 text-[#4ADE80]" },
+  school:     { label: "School",     color: "bg-[#34D399]/15 text-[#34D399]" },
+  hospital:   { label: "Hospital",   color: "bg-[#F87171]/15 text-[#F87171]" },
+  retail:     { label: "Retail",     color: "bg-[#C17A2E]/15 text-[#C17A2E]" },
+  "mixed-use":{ label: "Mixed-Use",  color: "bg-[#C084FC]/15 text-[#C084FC]" },
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  "on-site-super":    "On-Site Super",
+  "property-manager": "Property Manager",
+  "leasing-office":   "Leasing Office",
+  "owner":            "Owner",
+  "maintenance":      "Maintenance",
+  "other":            "Other",
+};
+
+const SOURCE_LABELS: Record<string, string> = {
+  hud:           "HUD",
+  "rental-license": "Rental License",
+  "google-places":  "Google",
+  "skip-trace":     "Skip Trace",
+  community:     "Community",
+};
+
+const NOTE_TYPE_LABELS: Record<string, string> = {
+  "access-code":     "Access Code",
+  "riser-location":  "Riser Location",
+  parking:           "Parking",
+  entrance:          "Entrance",
+  "gate-code":       "Gate Code",
+  lockbox:           "Lockbox",
+  general:           "General",
+};
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
+function InfoPill({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+      <Icon className="w-3 h-3 shrink-0" />
+      {text}
+    </span>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────────────────
+interface BuildingDetailProps {
+  building: Building;
+  onBack: () => void;
+}
+
+export default function BuildingDetail({ building, onBack }: BuildingDetailProps) {
+  const { data, isLoading } = useBuildingDetail(building.id);
+  const verifyContact = useVerifyContact();
+  const upvoteNote = useUpvoteNote();
+
+  const [addContactOpen, setAddContactOpen] = useState(false);
+  const [addNoteOpen, setAddNoteOpen] = useState(false);
+
+  const typeConf = TYPE_CONFIG[building.building_type ?? ""] ?? {
+    label: building.building_type ?? "Unknown",
+    color: "bg-slate-500/15 text-slate-600 dark:text-slate-400",
+  };
+
+  const displayName = building.name ?? building.address;
+  const subAddress = building.name ? building.address : null;
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* ── Header ── */}
+      <div className="flex items-start gap-2 px-4 py-3 border-b border-border shrink-0">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onBack}
+          className="mt-0.5 shrink-0"
+          data-testid="button-back-to-list"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div className="min-w-0">
+          <h2 className="font-semibold text-sm leading-tight truncate" data-testid="text-building-name">
+            {displayName}
+          </h2>
+          {subAddress && (
+            <p className="text-xs text-muted-foreground truncate mt-0.5" data-testid="text-building-address">
+              {subAddress}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground truncate">
+            {building.city}, {building.state} {building.zip}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Scrollable body ── */}
+      <ScrollArea className="flex-1 sidebar-scroll">
+        <div className="px-4 py-3 space-y-4">
+
+          {/* ── Meta badges ── */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${typeConf.color}`}
+              data-testid="badge-building-type"
+            >
+              {typeConf.label}
+            </span>
+            {building.unit_count && (
+              <InfoPill icon={Users} text={`${building.unit_count} units`} />
+            )}
+            {building.year_built && (
+              <InfoPill icon={Calendar} text={`Built ${building.year_built}`} />
+            )}
+            {building.sqft && (
+              <InfoPill icon={Ruler} text={`${building.sqft.toLocaleString()} sqft`} />
+            )}
+          </div>
+
+          {/* ── Owner info ── */}
+          {(building.owner_name || building.taxpayer_name) && (
+            <div className="space-y-1">
+              {building.owner_name && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <User className="w-3 h-3 shrink-0" />
+                  <span>Owner: <span className="text-foreground">{building.owner_name}</span></span>
+                </div>
+              )}
+              {building.taxpayer_name && building.taxpayer_name !== building.owner_name && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Building2 className="w-3 h-3 shrink-0" />
+                  <span>Taxpayer: <span className="text-foreground">{building.taxpayer_name}</span></span>
+                </div>
+              )}
+              {building.data_source && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span>Source: <span className="text-foreground">{building.data_source.toUpperCase()}</span></span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <Separator />
+
+          {/* ── Contacts section ── */}
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Contacts
+              </h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAddContactOpen(true)}
+                data-testid="button-add-contact"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Contact
+              </Button>
+            </div>
+
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-20 w-full rounded-md" />
+                <Skeleton className="h-20 w-full rounded-md" />
+              </div>
+            ) : data?.contacts.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">
+                No contacts yet. Be the first to add one.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {data?.contacts.map((contact) => (
+                  <Card
+                    key={contact.id}
+                    className="p-3 space-y-2"
+                    data-testid={`card-contact-${contact.id}`}
+                  >
+                    {/* Role + verification status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        {ROLE_LABELS[contact.role] ?? contact.role}
+                      </Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {contact.confidence === "verified" ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#4ADE80]" />
+                        ) : (
+                          <Circle className="w-3.5 h-3.5 text-muted-foreground" />
+                        )}
+                        {contact.source && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {SOURCE_LABELS[contact.source] ?? contact.source}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Name */}
+                    {contact.name && (
+                      <p className="text-sm font-medium leading-none">{contact.name}</p>
+                    )}
+                    {contact.title && (
+                      <p className="text-xs text-muted-foreground">{contact.title}</p>
+                    )}
+
+                    {/* Phone / Email */}
+                    <div className="flex flex-wrap gap-3">
+                      {contact.phone && (
+                        <a
+                          href={`tel:${contact.phone}`}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          data-testid={`link-contact-phone-${contact.id}`}
+                        >
+                          <Phone className="w-3 h-3" />
+                          {contact.phone}
+                        </a>
+                      )}
+                      {contact.email && (
+                        <a
+                          href={`mailto:${contact.email}`}
+                          className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          data-testid={`link-contact-email-${contact.id}`}
+                        >
+                          <Mail className="w-3 h-3" />
+                          {contact.email}
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    {contact.notes && (
+                      <p className="text-xs text-muted-foreground">{contact.notes}</p>
+                    )}
+
+                    {/* Verify button */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs px-2 text-muted-foreground"
+                      disabled={verifyContact.isPending}
+                      onClick={() =>
+                        verifyContact.mutate({ id: contact.id, buildingId: building.id })
+                      }
+                      data-testid={`button-verify-contact-${contact.id}`}
+                    >
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Confirm Still Accurate
+                      {(contact.verified_count ?? 0) > 0 && (
+                        <span className="ml-1 text-[#4ADE80]">
+                          ({contact.verified_count})
+                        </span>
+                      )}
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* ── Field Notes section ── */}
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Field Notes
+              </h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAddNoteOpen(true)}
+                data-testid="button-add-note"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Add Note
+              </Button>
+            </div>
+
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full rounded-md" />
+              </div>
+            ) : data?.notes.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">
+                No field notes yet. Add access intel for your crew.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {data?.notes.map((note) => (
+                  <Card
+                    key={note.id}
+                    className="p-3 space-y-2"
+                    data-testid={`card-note-${note.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        {NOTE_TYPE_LABELS[note.note_type] ?? note.note_type}
+                      </Badge>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 shrink-0"
+                        disabled={upvoteNote.isPending}
+                        onClick={() =>
+                          upvoteNote.mutate({ id: note.id, buildingId: building.id })
+                        }
+                        data-testid={`button-upvote-note-${note.id}`}
+                      >
+                        <ThumbsUp className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <p className="text-xs leading-relaxed" data-testid={`text-note-content-${note.id}`}>
+                      {note.content}
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      {(note.upvotes ?? 0) > 0 && (
+                        <span className="text-[#4ADE80]">{note.upvotes} helpful</span>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Bottom padding */}
+          <div className="pb-4" />
+        </div>
+      </ScrollArea>
+
+      {/* ── Dialogs ── */}
+      <AddContactForm
+        open={addContactOpen}
+        onOpenChange={setAddContactOpen}
+        buildingId={building.id}
+      />
+      <AddNoteForm
+        open={addNoteOpen}
+        onOpenChange={setAddNoteOpen}
+        buildingId={building.id}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,8 @@
+[build]
+  command = "npx vite build --outDir dist-static"
+  publish = "dist-static"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
