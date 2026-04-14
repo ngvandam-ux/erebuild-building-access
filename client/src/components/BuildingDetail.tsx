@@ -13,15 +13,21 @@ import {
   Calendar,
   Ruler,
   User,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBuildingDetail, useVerifyContact, useUpvoteNote } from "@/hooks/useBuildings";
-import type { Building } from "@/hooks/useBuildings";
+import { useBuildingDetail, useVerifyContact, useUpvoteNote, useUpdateContact, useUpdateNote } from "@/hooks/useBuildings";
+import type { Building, Contact, BuildingNote } from "@/hooks/useBuildings";
+import { useToast } from "@/hooks/use-toast";
 import AddContactForm from "./AddContactForm";
 import AddNoteForm from "./AddNoteForm";
 
@@ -75,6 +81,154 @@ function InfoPill({ icon: Icon, text }: { icon: React.ElementType; text: string 
   );
 }
 
+// ─── Inline edit sub-component for contacts ─────────────────────────────────
+function EditableContact({
+  contact,
+  buildingId,
+  onDone,
+}: {
+  contact: Contact;
+  buildingId: number;
+  onDone: () => void;
+}) {
+  const [name, setName] = useState(contact.name ?? "");
+  const [phone, setPhone] = useState(contact.phone ?? "");
+  const [email, setEmail] = useState(contact.email ?? "");
+  const [notes, setNotes] = useState(contact.notes ?? "");
+  const updateContact = useUpdateContact();
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    await updateContact.mutateAsync({
+      id: contact.id,
+      buildingId,
+      updates: {
+        name: name || null,
+        phone: phone || null,
+        email: email || null,
+        notes: notes || null,
+      },
+    });
+    toast({ title: "Contact updated" });
+    onDone();
+  };
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-border">
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Name"
+          className="h-7 text-xs"
+          data-testid={`input-edit-contact-name-${contact.id}`}
+        />
+        <Input
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Phone"
+          className="h-7 text-xs"
+          data-testid={`input-edit-contact-phone-${contact.id}`}
+        />
+      </div>
+      <Input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        className="h-7 text-xs"
+        data-testid={`input-edit-contact-email-${contact.id}`}
+      />
+      <Textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes"
+        className="resize-none text-xs min-h-[48px]"
+        data-testid={`textarea-edit-contact-notes-${contact.id}`}
+      />
+      <div className="flex gap-1 justify-end">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-6 text-xs px-2"
+          onClick={onDone}
+          data-testid={`button-cancel-edit-contact-${contact.id}`}
+        >
+          <X className="w-3 h-3 mr-1" />
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          className="h-6 text-xs px-2"
+          onClick={handleSave}
+          disabled={updateContact.isPending}
+          data-testid={`button-save-edit-contact-${contact.id}`}
+        >
+          <Check className="w-3 h-3 mr-1" />
+          {updateContact.isPending ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Inline edit sub-component for notes ────────────────────────────────────
+function EditableNote({
+  note,
+  buildingId,
+  onDone,
+}: {
+  note: BuildingNote;
+  buildingId: number;
+  onDone: () => void;
+}) {
+  const [content, setContent] = useState(note.content);
+  const updateNote = useUpdateNote();
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    await updateNote.mutateAsync({
+      id: note.id,
+      buildingId,
+      updates: { content },
+    });
+    toast({ title: "Note updated" });
+    onDone();
+  };
+
+  return (
+    <div className="space-y-2 pt-2 border-t border-border">
+      <Textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        className="resize-none text-xs min-h-[60px]"
+        data-testid={`textarea-edit-note-content-${note.id}`}
+      />
+      <div className="flex gap-1 justify-end">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-6 text-xs px-2"
+          onClick={onDone}
+          data-testid={`button-cancel-edit-note-${note.id}`}
+        >
+          <X className="w-3 h-3 mr-1" />
+          Cancel
+        </Button>
+        <Button
+          size="sm"
+          className="h-6 text-xs px-2"
+          onClick={handleSave}
+          disabled={updateNote.isPending}
+          data-testid={`button-save-edit-note-${note.id}`}
+        >
+          <Check className="w-3 h-3 mr-1" />
+          {updateNote.isPending ? "Saving..." : "Save"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ──────────────────────────────────────────────────────────
 interface BuildingDetailProps {
   building: Building;
@@ -88,6 +242,8 @@ export default function BuildingDetail({ building, onBack }: BuildingDetailProps
 
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [addNoteOpen, setAddNoteOpen] = useState(false);
+  const [editingContactId, setEditingContactId] = useState<number | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
 
   const typeConf = TYPE_CONFIG[building.building_type ?? ""] ?? {
     label: building.building_type ?? "Unknown",
@@ -208,12 +364,25 @@ export default function BuildingDetail({ building, onBack }: BuildingDetailProps
                     className="p-3 space-y-2"
                     data-testid={`card-contact-${contact.id}`}
                   >
-                    {/* Role + verification status */}
+                    {/* Role + verification status + edit button */}
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="secondary" className="text-xs shrink-0">
                         {ROLE_LABELS[contact.role] ?? contact.role}
                       </Badge>
                       <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={() =>
+                            setEditingContactId(
+                              editingContactId === contact.id ? null : contact.id
+                            )
+                          }
+                          data-testid={`button-edit-contact-${contact.id}`}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
                         {contact.confidence === "verified" ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-[#4ADE80]" />
                         ) : (
@@ -262,6 +431,15 @@ export default function BuildingDetail({ building, onBack }: BuildingDetailProps
                     {/* Notes */}
                     {contact.notes && (
                       <p className="text-xs text-muted-foreground">{contact.notes}</p>
+                    )}
+
+                    {/* Inline edit form */}
+                    {editingContactId === contact.id && (
+                      <EditableContact
+                        contact={contact}
+                        buildingId={building.id}
+                        onDone={() => setEditingContactId(null)}
+                      />
                     )}
 
                     {/* Verify button */}
@@ -328,22 +506,47 @@ export default function BuildingDetail({ building, onBack }: BuildingDetailProps
                       <Badge variant="secondary" className="text-xs shrink-0">
                         {NOTE_TYPE_LABELS[note.note_type] ?? note.note_type}
                       </Badge>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 shrink-0"
-                        disabled={upvoteNote.isPending}
-                        onClick={() =>
-                          upvoteNote.mutate({ id: note.id, buildingId: building.id })
-                        }
-                        data-testid={`button-upvote-note-${note.id}`}
-                      >
-                        <ThumbsUp className="w-3 h-3" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={() =>
+                            setEditingNoteId(
+                              editingNoteId === note.id ? null : note.id
+                            )
+                          }
+                          data-testid={`button-edit-note-${note.id}`}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6"
+                          disabled={upvoteNote.isPending}
+                          onClick={() =>
+                            upvoteNote.mutate({ id: note.id, buildingId: building.id })
+                          }
+                          data-testid={`button-upvote-note-${note.id}`}
+                        >
+                          <ThumbsUp className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-xs leading-relaxed" data-testid={`text-note-content-${note.id}`}>
                       {note.content}
                     </p>
+
+                    {/* Inline edit form */}
+                    {editingNoteId === note.id && (
+                      <EditableNote
+                        note={note}
+                        buildingId={building.id}
+                        onDone={() => setEditingNoteId(null)}
+                      />
+                    )}
+
                     <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                       {(note.upvotes ?? 0) > 0 && (
                         <span className="text-[#4ADE80]">{note.upvotes} helpful</span>

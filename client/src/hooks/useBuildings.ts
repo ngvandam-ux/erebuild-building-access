@@ -280,3 +280,59 @@ export function useUpvoteNote() {
     },
   });
 }
+
+// Update an existing contact (limited fields: name, phone, email, notes)
+export function useUpdateContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      buildingId,
+      updates,
+    }: {
+      id: number;
+      buildingId: number;
+      updates: { name?: string | null; phone?: string | null; email?: string | null; notes?: string | null };
+    }) => {
+      const { data, error } = await supabase
+        .from("ba_contacts")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return { data, buildingId };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["buildings", result.buildingId] });
+    },
+  });
+}
+
+// Update an existing note (limited fields: content, note_type)
+export function useUpdateNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      buildingId,
+      updates,
+    }: {
+      id: number;
+      buildingId: number;
+      updates: { content?: string; note_type?: string };
+    }) => {
+      const { data, error } = await supabase
+        .from("ba_building_notes")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return { data, buildingId };
+    },
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ["buildings", result.buildingId] });
+    },
+  });
+}

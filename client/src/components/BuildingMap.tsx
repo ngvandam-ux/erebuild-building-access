@@ -1,5 +1,6 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import { Map as MapIcon, Satellite, Layers } from "lucide-react";
 import type { Building } from "@/hooks/useBuildings";
 import type { MapBounds } from "@/hooks/useBuildings";
 
@@ -28,6 +29,8 @@ function createDivIcon(type: string | null | undefined, selected: boolean): L.Di
   });
 }
 
+type TileMode = "street" | "satellite";
+
 // ─── Main map component (pure Leaflet, no react-leaflet hooks) ───────────────
 interface BuildingMapProps {
   buildings: Building[];
@@ -46,9 +49,11 @@ export default function BuildingMap({
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const tileLayersRef = useRef<L.TileLayer[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onBoundsChangeRef = useRef(onBoundsChange);
   const onSelectBuildingRef = useRef(onSelectBuilding);
+  const [tileMode, setTileMode] = useState<TileMode>("street");
 
   // Keep refs current
   useEffect(() => { onBoundsChangeRef.current = onBoundsChange; }, [onBoundsChange]);
@@ -64,19 +69,18 @@ export default function BuildingMap({
       zoomControl: true,
     });
 
-    // Esri World Imagery — satellite hybrid with road/label overlay, no API key
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-      attribution: 'Tiles &copy; Esri',
-      maxZoom: 19,
-    }).addTo(map);
+    // Default: CARTO Voyager (clean street map)
+    const streetLayer = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 20,
+      }
+    );
 
-    // Road + label overlay on top of satellite
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}", {
-      maxZoom: 19,
-    }).addTo(map);
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
-      maxZoom: 19,
-    }).addTo(map);
+    streetLayer.addTo(map);
+    tileLayersRef.current = [streetLayer];
 
     const layerGroup = L.layerGroup().addTo(map);
     layerGroupRef.current = layerGroup;
@@ -109,6 +113,54 @@ export default function BuildingMap({
       markersRef.current.clear();
     };
   }, []);
+
+  // ── Switch tiles when tileMode changes ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Remove existing tile layers
+    for (const layer of tileLayersRef.current) {
+      map.removeLayer(layer);
+    }
+    tileLayersRef.current = [];
+
+    if (tileMode === "street") {
+      const street = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 20,
+        }
+      );
+      street.addTo(map);
+      tileLayersRef.current = [street];
+    } else {
+      // Satellite + road/label overlays
+      const sat = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        { attribution: "Tiles &copy; Esri", maxZoom: 19 }
+      );
+      const roads = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 19 }
+      );
+      const labels = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+        { maxZoom: 19 }
+      );
+      sat.addTo(map);
+      roads.addTo(map);
+      labels.addTo(map);
+      tileLayersRef.current = [sat, roads, labels];
+    }
+
+    // Bring marker layer back on top
+    if (layerGroupRef.current) {
+      layerGroupRef.current.bringToFront();
+    }
+  }, [tileMode]);
 
   // ── Update markers when buildings change ──
   useEffect(() => {
@@ -177,10 +229,34 @@ export default function BuildingMap({
   }, [selectedBuilding]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: "100%", height: "100%" }}
-      data-testid="leaflet-map"
-    />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div
+        ref={containerRef}
+        style={{ width: "100%", height: "100%" }}
+        data-testid="leaflet-map"
+      />
+
+      {/* ── Tile layer toggle ── */}
+      <div className="tile-toggle" data-testid="tile-toggle">
+        <button
+          className={`tile-toggle-btn${tileMode === "street" ? " active" : ""}`}
+          onClick={() => setTileMode("street")}
+          title="Street map"
+          data-testid="button-tile-street"
+        >
+          <MapIcon className="w-3.5 h-3.5" />
+          <span>Street</span>
+        </button>
+        <button
+          className={`tile-toggle-btn${tileMode === "satellite" ? " active" : ""}`}
+          onClick={() => setTileMode("satellite")}
+          title="Satellite"
+          data-testid="button-tile-satellite"
+        >
+          <Satellite className="w-3.5 h-3.5" />
+          <span>Satellite</span>
+        </button>
+      </div>
+    </div>
   );
 }

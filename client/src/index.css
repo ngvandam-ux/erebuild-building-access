@@ -222,20 +222,62 @@
   height: 14px;
   border-radius: 50%;
   border: 2px solid #fff;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .map-marker:hover {
   transform: scale(1.4);
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 0 6px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5), 0 0 4px rgba(0, 0, 0, 0.3);
 }
 
 .map-marker.selected {
   transform: scale(1.8);
   border-color: #fff;
-  box-shadow: 0 0 0 3px rgba(212, 165, 71, 0.9), 0 0 14px rgba(212, 165, 71, 0.5), 0 0 4px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 0 3px rgba(212, 165, 71, 0.9), 0 0 14px rgba(212, 165, 71, 0.5), 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Tile layer toggle ─── */
+.tile-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tile-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  background: hsl(var(--card));
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tile-toggle-btn:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+}
+
+.tile-toggle-btn.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.tile-toggle-btn + .tile-toggle-btn {
+  border-left: 1px solid hsl(var(--border));
 }
 
 /* Building type marker colors — Erebuild palette on dark tiles */
