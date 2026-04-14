@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
-import { Map as MapIcon, Satellite, Layers } from "lucide-react";
+import "leaflet.markercluster";
+import { Map as MapIcon, Satellite } from "lucide-react";
 import type { Building } from "@/hooks/useBuildings";
 import type { MapBounds } from "@/hooks/useBuildings";
 
@@ -31,7 +32,7 @@ function createDivIcon(type: string | null | undefined, selected: boolean): L.Di
 
 type TileMode = "street" | "satellite";
 
-// ─── Main map component (pure Leaflet, no react-leaflet hooks) ───────────────
+// ─── Main map component (pure Leaflet + markercluster) ───────────────────────
 interface BuildingMapProps {
   buildings: Building[];
   selectedBuilding: Building | null;
@@ -47,8 +48,8 @@ export default function BuildingMap({
 }: BuildingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
-  const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const tileLayersRef = useRef<L.TileLayer[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onBoundsChangeRef = useRef(onBoundsChange);
@@ -82,8 +83,33 @@ export default function BuildingMap({
     streetLayer.addTo(map);
     tileLayersRef.current = [streetLayer];
 
-    const layerGroup = L.layerGroup().addTo(map);
-    layerGroupRef.current = layerGroup;
+    // ── Create MarkerClusterGroup with Erebuild-branded styling ──
+    const clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 17,
+      chunkedLoading: true,
+      chunkInterval: 100,
+      chunkDelay: 20,
+      iconCreateFunction: (cluster: L.MarkerCluster) => {
+        const count = cluster.getChildCount();
+        let size = "small";
+        let px = 36;
+        if (count > 100) { size = "large"; px = 48; }
+        else if (count > 30) { size = "medium"; px = 42; }
+
+        return L.divIcon({
+          html: `<div class="cluster-inner">${count}</div>`,
+          className: `marker-cluster marker-cluster-${size}`,
+          iconSize: L.point(px, px),
+        });
+      },
+    });
+
+    clusterGroup.addTo(map);
+    clusterGroupRef.current = clusterGroup;
 
     const emitBounds = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -110,6 +136,7 @@ export default function BuildingMap({
       if (debounceRef.current) clearTimeout(debounceRef.current);
       map.remove();
       mapRef.current = null;
+      clusterGroupRef.current = null;
       markersRef.current.clear();
     };
   }, []);
@@ -155,35 +182,30 @@ export default function BuildingMap({
       labels.addTo(map);
       tileLayersRef.current = [sat, roads, labels];
     }
-
-    // Bring marker layer back on top by re-adding it
-    if (layerGroupRef.current) {
-      layerGroupRef.current.eachLayer((layer) => {
-        if (layer instanceof L.Marker) {
-          layer.setZIndexOffset(1000);
-        }
-      });
-    }
   }, [tileMode]);
 
   // ── Update markers when buildings change ──
   useEffect(() => {
-    const map = mapRef.current;
-    const layerGroup = layerGroupRef.current;
-    if (!map || !layerGroup) return;
+    const clusterGroup = clusterGroupRef.current;
+    if (!clusterGroup) return;
 
     const prev = markersRef.current;
     const currentIds = new Set(buildings.map((b) => b.id));
 
     // Remove stale markers
+    const toRemove: L.Marker[] = [];
     for (const [id, marker] of prev.entries()) {
       if (!currentIds.has(id)) {
-        layerGroup.removeLayer(marker);
+        toRemove.push(marker);
         prev.delete(id);
       }
     }
+    if (toRemove.length > 0) {
+      clusterGroup.removeLayers(toRemove);
+    }
 
-    // Add/update markers
+    // Add new markers (batch for performance)
+    const toAdd: L.Marker[] = [];
     for (const building of buildings) {
       const isSelected = building.id === selectedBuilding?.id;
       const existing = prev.get(building.id);
@@ -203,9 +225,13 @@ export default function BuildingMap({
           offset: [0, -8],
         });
 
-        layerGroup.addLayer(marker);
         prev.set(building.id, marker);
+        toAdd.push(marker);
       }
+    }
+
+    if (toAdd.length > 0) {
+      clusterGroup.addLayers(toAdd);
     }
   }, [buildings, selectedBuilding?.id]);
 

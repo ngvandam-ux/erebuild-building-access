@@ -1,7 +1,6 @@
-import { useState, useCallback, useRef } from "react";
-import { Search, Building2, Settings, X, Loader2 } from "lucide-react";
+import { useState, useCallback, useRef, useMemo } from "react";
+import { Search, Building2, Settings, X, Loader2, ArrowUpDown, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +9,7 @@ import {
   useMapBuildings,
   useSearchBuildings,
   useStats,
+  useDataSourceCounts,
   type MapBounds,
 } from "@/hooks/useBuildings";
 import type { Building } from "@/hooks/useBuildings";
@@ -28,6 +28,44 @@ const FILTER_CHIPS = [
   { value: "hospital",   label: "Hospital" },
 ];
 
+// ─── Sort options ─────────────────────────────────────────────────────────
+type SortKey = "name" | "units" | "type" | "source";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "name",   label: "Name" },
+  { value: "units",  label: "Units" },
+  { value: "type",   label: "Type" },
+  { value: "source", label: "Data Source" },
+];
+
+function sortBuildings(buildings: Building[], sortKey: SortKey): Building[] {
+  const sorted = [...buildings];
+  switch (sortKey) {
+    case "name":
+      return sorted.sort((a, b) => {
+        const nameA = (a.name ?? a.address).toLowerCase();
+        const nameB = (b.name ?? b.address).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    case "units":
+      return sorted.sort((a, b) => (b.unit_count ?? 0) - (a.unit_count ?? 0));
+    case "type":
+      return sorted.sort((a, b) => {
+        const typeA = (a.building_type ?? "zzz").toLowerCase();
+        const typeB = (b.building_type ?? "zzz").toLowerCase();
+        return typeA.localeCompare(typeB);
+      });
+    case "source":
+      return sorted.sort((a, b) => {
+        const srcA = (a.data_source ?? "zzz").toLowerCase();
+        const srcB = (b.data_source ?? "zzz").toLowerCase();
+        return srcA.localeCompare(srcB);
+      });
+    default:
+      return sorted;
+  }
+}
+
 // ─── Building type dot colors ─────────────────────────────────────────────
 const TYPE_DOT: Record<string, string> = {
   apartment:  "bg-[#D4A547]",
@@ -41,8 +79,19 @@ const TYPE_DOT: Record<string, string> = {
   "mixed-use":"bg-[#C084FC]",
 };
 
-// ─── Settings Popover (data info) ────────────────────────────────────────
-function SeedSettings() {
+// ─── Data source labels ──────────────────────────────────────────────────
+const SOURCE_LABELS: Record<string, string> = {
+  "metrogis":       "MetroGIS (Hennepin/Ramsey)",
+  "rental-license": "Minneapolis Rental Licenses",
+  "hud":            "HUD Multifamily",
+  "community":      "Community Contributions",
+};
+
+// ─── Settings Popover (live data info) ──────────────────────────────────
+function DataSettings() {
+  const { data: sourceCounts, isLoading } = useDataSourceCounts();
+  const { data: stats } = useStats();
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -50,21 +99,89 @@ function SeedSettings() {
           size="icon"
           variant="ghost"
           data-testid="button-settings"
-          title="Settings"
+          title="Data Sources"
         >
           <Settings className="w-4 h-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3 space-y-3" align="end">
+      <PopoverContent className="w-72 p-3 space-y-3" align="end">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Data Sources
+          Open Data Sources
         </p>
 
-        <div className="space-y-1 text-xs text-muted-foreground">
-          <p>MetroGIS — Hennepin &amp; Ramsey counties</p>
-          <p>HUD Multifamily — Minneapolis metro</p>
-          <p>Community contributions</p>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+            <Skeleton className="h-3 w-3/5" />
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {sourceCounts?.map((sc) => (
+              <div key={sc.source} className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground truncate mr-2">
+                  {SOURCE_LABELS[sc.source] ?? sc.source}
+                </span>
+                <span className="text-foreground font-medium tabular-nums shrink-0">
+                  {sc.count.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="border-t border-border pt-2 mt-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Total Buildings</span>
+            <span className="text-foreground font-semibold tabular-nums">
+              {stats?.buildings?.toLocaleString() ?? "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-xs mt-1">
+            <span className="text-muted-foreground">Total Contacts</span>
+            <span className="text-foreground font-semibold tabular-nums">
+              {stats?.contacts?.toLocaleString() ?? "—"}
+            </span>
+          </div>
         </div>
+
+        <p className="text-[10px] text-muted-foreground/70 pt-1">
+          Shared across all Erebuild users
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ─── Sort dropdown ────────────────────────────────────────────────────────
+function SortDropdown({ sortKey, onSortChange }: { sortKey: SortKey; onSortChange: (k: SortKey) => void }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+          data-testid="button-sort"
+        >
+          <ArrowUpDown className="w-3 h-3" />
+          <span>{SORT_OPTIONS.find(o => o.value === sortKey)?.label ?? "Sort"}</span>
+          <ChevronDown className="w-2.5 h-2.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-36 p-1" align="end">
+        {SORT_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => onSortChange(opt.value)}
+            className={`w-full text-left text-xs px-2.5 py-1.5 rounded-sm transition-colors ${
+              sortKey === opt.value
+                ? "bg-primary text-primary-foreground"
+                : "text-foreground hover:bg-accent"
+            }`}
+            data-testid={`sort-option-${opt.value}`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </PopoverContent>
     </Popover>
   );
@@ -170,6 +287,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -191,19 +309,17 @@ export default function Sidebar({
     isSearching ? debouncedSearch : ""
   );
 
-  // Propagate map buildings up so parent can render markers
-  const buildings = isSearching ? (searchResults ?? []) : (mapBuildings ?? []);
+  // Apply sorting
+  const rawBuildings = isSearching ? (searchResults ?? []) : (mapBuildings ?? []);
+  const buildings = useMemo(() => sortBuildings(rawBuildings, sortKey), [rawBuildings, sortKey]);
   const isLoading = isSearching ? searchLoading : mapLoading;
 
   // Notify parent of building list changes for map markers
-  // (we do this via an effect-like callback — just expose them via the already-passed prop)
-  // The parent handles marker rendering from `buildings` passed here via onMapBuildings
-  // We call it inline when buildings change (not ideal but avoids an effect)
   const prevBuildingsRef = useRef<Building[]>([]);
-  if (buildings !== prevBuildingsRef.current) {
-    prevBuildingsRef.current = buildings;
+  if (rawBuildings !== prevBuildingsRef.current) {
+    prevBuildingsRef.current = rawBuildings;
     // Schedule for next microtask to avoid setState during render
-    Promise.resolve().then(() => onMapBuildings(buildings));
+    Promise.resolve().then(() => onMapBuildings(rawBuildings));
   }
 
   return (
@@ -232,7 +348,7 @@ export default function Sidebar({
             <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Twin Cities</p>
           </div>
         </div>
-        <SeedSettings />
+        <DataSettings />
       </div>
 
       {/* ── When a building is selected, show detail panel ── */}
@@ -291,20 +407,23 @@ export default function Sidebar({
             </div>
           )}
 
-          {/* ── Results label ── */}
+          {/* ── Results label + sort ── */}
           <div className="px-3 pb-1 shrink-0 flex items-center justify-between">
             <span className="text-[11px] text-muted-foreground">
               {isSearching
                 ? `Results for "${searchQuery}"`
                 : `In current view`}
             </span>
-            {isLoading ? (
-              <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-            ) : (
-              <span className="text-[11px] text-muted-foreground" data-testid="text-result-count">
-                {buildings.length}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <SortDropdown sortKey={sortKey} onSortChange={setSortKey} />
+              {isLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+              ) : (
+                <span className="text-[11px] text-muted-foreground tabular-nums" data-testid="text-result-count">
+                  {buildings.length}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* ── Building list ── */}
@@ -326,7 +445,7 @@ export default function Sidebar({
                   <p className="text-xs text-muted-foreground/70 mt-1">
                     {isSearching
                       ? "Try a different search term"
-                      : "Zoom in or pan the map, or use the settings menu to seed data"}
+                      : "Zoom in or pan the map to see buildings in this area"}
                   </p>
                 </div>
               ) : (

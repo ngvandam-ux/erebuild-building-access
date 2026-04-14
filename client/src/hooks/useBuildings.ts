@@ -81,7 +81,7 @@ export function useMapBuildings(bounds: MapBounds | null, type?: string) {
       let query = supabase
         .from("ba_buildings")
         .select("*")
-        .limit(1500);
+        .limit(5000);
 
       if (bounds) {
         query = query
@@ -278,6 +278,34 @@ export function useUpvoteNote() {
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["buildings", result.buildingId] });
     },
+  });
+}
+
+// Fetch data source counts for settings popover
+export interface DataSourceCount {
+  source: string;
+  count: number;
+}
+
+export function useDataSourceCounts() {
+  return useQuery<DataSourceCount[]>({
+    queryKey: ["data-source-counts"],
+    queryFn: async () => {
+      // We query distinct data_source values and count per source
+      const sources = ["metrogis", "rental-license", "hud", "community"];
+      const results: DataSourceCount[] = [];
+      for (const source of sources) {
+        const { count } = await supabase
+          .from("ba_buildings")
+          .select("id", { count: "exact", head: true })
+          .eq("data_source", source);
+        if (count && count > 0) {
+          results.push({ source, count });
+        }
+      }
+      return results.sort((a, b) => b.count - a.count);
+    },
+    staleTime: 120_000,
   });
 }
 
