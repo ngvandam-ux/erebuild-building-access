@@ -47,6 +47,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
 const ROLE_LABELS: Record<string, string> = {
   "on-site-super":    "On-Site Super",
   "property-manager": "Property Manager",
+  "property-owner":   "Property Owner",
   "leasing-office":   "Leasing Office",
   "owner":            "Owner",
   "maintenance":      "Maintenance",
@@ -54,11 +55,17 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
-  hud:           "HUD",
-  "rental-license": "Rental License",
-  "google-places":  "Google",
-  "skip-trace":     "Skip Trace",
-  community:     "Community",
+  hud:                    "HUD",
+  "rental-license":       "Rental License",
+  "mpls-rental-license":  "Mpls Rental License",
+  "google-places":        "Google",
+  "skip-trace":           "Skip Trace",
+  community:              "Community",
+  "hennepin-assessor-owner": "Hennepin Assessor",
+  "metrogis-owner":       "MetroGIS Parcels",
+  "metrogis-6-counties-owner": "MetroGIS",
+  "rental-license-owner": "Rental License",
+  "hud-owner":            "HUD",
 };
 
 const NOTE_TYPE_LABELS: Record<string, string> = {

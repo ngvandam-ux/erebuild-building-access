@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo, memo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Search, Building2, Settings, X, Loader2, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Search, Building2, Settings, X, Loader2, ArrowUpDown, ChevronDown, Phone, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +10,7 @@ import {
   useSearchBuildings,
   useStats,
   useDataSourceCounts,
+  useContactLevels,
   type MapBounds,
 } from "@/hooks/useBuildings";
 import type { Building } from "@/hooks/useBuildings";
@@ -29,16 +30,17 @@ const FILTER_CHIPS = [
 ];
 
 // ─── Sort options ─────────────────────────────────────────────────────────
-type SortKey = "name" | "units" | "type" | "source";
+type SortKey = "name" | "units" | "type" | "source" | "contact";
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "name",   label: "Name" },
-  { value: "units",  label: "Units" },
-  { value: "type",   label: "Type" },
-  { value: "source", label: "Data Source" },
+  { value: "name",    label: "Name" },
+  { value: "units",   label: "Units" },
+  { value: "type",    label: "Type" },
+  { value: "source",  label: "Data Source" },
+  { value: "contact", label: "Contact Info" },
 ];
 
-function sortBuildings(buildings: Building[], sortKey: SortKey): Building[] {
+function sortBuildings(buildings: Building[], sortKey: SortKey, contactSet?: Set<number>): Building[] {
   const sorted = [...buildings];
   switch (sortKey) {
     case "name":
@@ -61,6 +63,12 @@ function sortBuildings(buildings: Building[], sortKey: SortKey): Building[] {
         const srcB = (b.data_source ?? "zzz").toLowerCase();
         return srcA.localeCompare(srcB);
       });
+    case "contact":
+      return sorted.sort((a, b) => {
+        const aHas = contactSet?.has(a.id) ? 1 : 0;
+        const bHas = contactSet?.has(b.id) ? 1 : 0;
+        return bHas - aHas; // buildings with contacts first
+      });
     default:
       return sorted;
   }
@@ -81,10 +89,13 @@ const TYPE_DOT: Record<string, string> = {
 
 // ─── Data source labels ──────────────────────────────────────────────────
 const SOURCE_LABELS: Record<string, string> = {
-  "metrogis":       "MetroGIS (Hennepin/Ramsey)",
-  "rental-license": "Minneapolis Rental Licenses",
-  "hud":            "HUD Multifamily",
-  "community":      "Community Contributions",
+  "hennepin-assessor":  "Hennepin Assessor 2025",
+  "metrogis-6-counties":"MetroGIS (6 Counties)",
+  "metrogis":           "MetroGIS Original",
+  "metrogis-original":  "MetroGIS Original",
+  "rental-license":     "Mpls Rental Licenses",
+  "hud":                "HUD Multifamily",
+  "community":          "Community Contributions",
 };
 
 // ─── Settings Popover (live data info) ──────────────────────────────────
@@ -191,10 +202,11 @@ function SortDropdown({ sortKey, onSortChange }: { sortKey: SortKey; onSortChang
 interface BuildingRowProps {
   building: Building;
   selected: boolean;
+  hasContact: boolean;
   onClick: () => void;
 }
 
-const BuildingRow = memo(function BuildingRow({ building, selected, onClick }: BuildingRowProps) {
+const BuildingRow = memo(function BuildingRow({ building, selected, hasContact, onClick }: BuildingRowProps) {
   const dotClass = TYPE_DOT[building.building_type ?? ""] ?? "bg-slate-400";
   const displayName = building.name ?? building.address;
   const subLine = building.name ? building.address : null;
@@ -212,7 +224,14 @@ const BuildingRow = memo(function BuildingRow({ building, selected, onClick }: B
       <div className="flex items-start gap-2.5 min-w-0">
         <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${dotClass}`} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate leading-tight">{displayName}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium truncate leading-tight flex-1 min-w-0">{displayName}</p>
+            {hasContact && (
+              <span className="shrink-0 flex items-center gap-0.5 text-[#4ADE80]" title="Has phone/email contact">
+                <Phone className="w-2.5 h-2.5" />
+              </span>
+            )}
+          </div>
           {subLine && (
             <p className="text-xs text-muted-foreground truncate">{subLine}</p>
           )}
@@ -241,10 +260,12 @@ const BuildingRow = memo(function BuildingRow({ building, selected, onClick }: B
 function VirtualBuildingList({
   buildings,
   selectedId,
+  contactSet,
   onSelect,
 }: {
   buildings: Building[];
   selectedId: number | null;
+  contactSet?: Set<number>;
   onSelect: (b: Building) => void;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -290,6 +311,7 @@ function VirtualBuildingList({
                 <BuildingRow
                   building={building}
                   selected={building.id === selectedId}
+                  hasContact={contactSet?.has(building.id) ?? false}
                   onClick={() => onSelect(building)}
                 />
               </div>
@@ -350,6 +372,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [contactFilter, setContactFilter] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -362,6 +385,9 @@ export default function Sidebar({
 
   const isSearching = debouncedSearch.length >= 2;
 
+  // Contact levels: Set of building_ids that have phone/email contacts
+  const { data: contactSet } = useContactLevels();
+
   const { data: mapBuildings, isLoading: mapLoading } = useMapBuildings(
     isSearching ? null : bounds,
     isSearching ? undefined : activeFilter
@@ -371,9 +397,13 @@ export default function Sidebar({
     isSearching ? debouncedSearch : ""
   );
 
-  // Apply sorting
+  // Apply contact filter + sorting
   const rawBuildings = isSearching ? (searchResults ?? []) : (mapBuildings ?? []);
-  const buildings = useMemo(() => sortBuildings(rawBuildings, sortKey), [rawBuildings, sortKey]);
+  const filteredBuildings = useMemo(() => {
+    if (!contactFilter || !contactSet) return rawBuildings;
+    return rawBuildings.filter((b) => contactSet.has(b.id));
+  }, [rawBuildings, contactFilter, contactSet]);
+  const buildings = useMemo(() => sortBuildings(filteredBuildings, sortKey, contactSet), [filteredBuildings, sortKey, contactSet]);
   const isLoading = isSearching ? searchLoading : mapLoading;
 
   // Notify parent of building list changes for map markers
@@ -463,6 +493,18 @@ export default function Sidebar({
                     {chip.label}
                   </button>
                 ))}
+                <button
+                  onClick={() => setContactFilter(!contactFilter)}
+                  className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors inline-flex items-center gap-1 ${
+                    contactFilter
+                      ? "bg-[#4ADE80]/20 text-[#4ADE80] border-[#4ADE80]/50"
+                      : "bg-transparent text-muted-foreground border-border hover:border-[#4ADE80]/50"
+                  }`}
+                  data-testid="chip-filter-has-contact"
+                >
+                  <Phone className="w-2.5 h-2.5" />
+                  Has Contact
+                </button>
               </div>
             </div>
           )}
@@ -510,6 +552,7 @@ export default function Sidebar({
             <VirtualBuildingList
               buildings={buildings}
               selectedId={selectedBuilding?.id ?? null}
+              contactSet={contactSet}
               onSelect={onSelectBuilding}
             />
           )}

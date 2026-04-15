@@ -297,6 +297,63 @@ export function useUpvoteNote() {
   });
 }
 
+// ─── Contact level lookup ────────────────────────────────────────────────────
+// Returns a Map of building_id → contact level for quick O(1) lookups
+// "has-contact" = has phone or email, "name-only" = only owner name, null = nothing
+export type ContactLevel = "has-contact" | "name-only" | null;
+
+export function useContactLevels() {
+  return useQuery<Set<number>>({
+    queryKey: ["contact-levels"],
+    queryFn: async () => {
+      // Only fetch building_ids that have a phone or email
+      // This is the set of buildings with "real" contact info
+      const hasContactSet = new Set<number>();
+
+      let offset = 0;
+      const batchSize = 5000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("ba_contacts")
+          .select("building_id")
+          .not("phone", "is", null)
+          .range(offset, offset + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+
+        for (const c of data) {
+          hasContactSet.add(c.building_id);
+        }
+
+        if (data.length < batchSize) break;
+        offset += batchSize;
+      }
+
+      // Also get buildings with email (not null)
+      offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("ba_contacts")
+          .select("building_id")
+          .not("email", "is", null)
+          .range(offset, offset + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+
+        for (const c of data) {
+          hasContactSet.add(c.building_id);
+        }
+
+        if (data.length < batchSize) break;
+        offset += batchSize;
+      }
+
+      return hasContactSet;
+    },
+    staleTime: 120_000,
+  });
+}
+
 // Fetch data source counts for settings popover
 export interface DataSourceCount {
   source: string;
@@ -307,7 +364,7 @@ export function useDataSourceCounts() {
   return useQuery<DataSourceCount[]>({
     queryKey: ["data-source-counts"],
     queryFn: async () => {
-      const sources = ["metrogis", "rental-license", "hud", "community"];
+      const sources = ["hennepin-assessor", "metrogis-6-counties", "metrogis-original", "rental-license", "hud", "community"];
       const results: DataSourceCount[] = [];
       for (const source of sources) {
         const { count } = await supabase
