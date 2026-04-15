@@ -1,0 +1,35 @@
+Loaded 39292 metro buildings without phone contacts
+Built grid with 2556 cells
+Created 54 geographic tiles
+  Tile 3: error - HTTP Error 504: Gateway Timeout
+  Tile 4: error - HTTP Error 504: Gateway Timeout
+  Tile 6: error - HTTP Error 504: Gateway Timeout
+  Tile 9: error - HTTP Error 504: Gateway Timeout
+  Tile 10: error - HTTP Error 504: Gateway Timeout
+  Tile 14: error - HTTP Error 429: Too Many Requests
+  Tile 17: error - HTTP Error 504: Gateway Timeout
+  Tile 18: error - HTTP Error 504: Gateway Timeout
+  [20/54] OSM elements: 1228, matched: 255, inserted: 255
+  Tile 21: error - HTTP Error 429: Too Many Requests
+  Tile 24: error - HTTP Error 504: Gateway Timeout
+  Tile 28: error - HTTP Error 429: Too Many Requests
+  Tile 30: error - HTTP Error 429: Too Many Requests
+  Tile 31: error - HTTP Error 429: Too Many Requests
+  Tile 33: error - HTTP Error 429: Too Many Requests
+  Tile 35: error - HTTP Error 504: Gateway Timeout
+  Tile 36: error - HTTP Error 504: Gateway Timeout
+  Tile 40: error - HTTP Error 429: Too Many Requests
+  Tile 41: error - HTTP Error 429: Too Many Requests
+  Tile 48: error - HTTP Error 429: Too Many Requests
+  Tile 49: error - HTTP Error 429: Too Many Requests
+  [50/54] OSM elements: 4546, matched: 2113, inserted: 2113
+  Tile 51: error - HTTP Error 429: Too Many Requests
+  Tile 52: error - HTTP Error 429: Too Many Requests
+  [54/54] OSM elements: 4562, matched: 2128, inserted: 2128
+
+============================================================
+OVERPASS ENRICHMENT COMPLETE
+  Tiles queried:          54
+  OSM elements w/ phone:  4,562
+  Matched to buildings:   2,128
+  Contacts inserted:      2,128

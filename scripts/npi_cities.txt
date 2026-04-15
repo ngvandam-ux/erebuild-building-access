@@ -1,0 +1,766 @@
+Minneapolis
+Saint Paul
+Eagan
+Burnsville
+Lakeville
+Shakopee
+Coon Rapids
+Minnetrista
+Roseville
+Hassan
+Maplewood
+Rogers
+Spring Park
+Blaine
+Minnetonka
+Loretto
+St. Bonifacius
+Independence
+Woodbury
+Hastings
+Anoka
+Savage
+Fridley
+Inver Grove Heights
+South Saint Paul
+Minnetonka Beach
+White Bear Lake
+Hopkins
+Fort Snelling
+Long Lake
+St. Anthony
+Apple Valley
+Champlin
+Cottage Grove
+Richfield
+West Saint Paul
+Forest Lake
+New Brighton
+Chaska
+Mound
+Rochester
+Columbia Heights
+Maple Plain
+Little Canada
+Stillwater
+Rosemount
+Bloomington
+Farmington
+Greenwood
+Prior Lake
+Waconia
+Vadnais Heights
+Maple Grove
+Chanhassen
+Oakdale
+Osseo
+Medicine Lake
+Brooklyn Park
+Shoreview
+Golden Valley
+Plymouth
+Hanover
+North Saint Paul
+Brooklyn Center
+Belle Plaine
+Deephaven
+Medina
+Mendota Heights
+Ramsey
+Andover
+Mounds View
+Corcoran
+Ham Lake
+Jordan
+Eden Prairie
+Woodland
+New Prague
+Duluth
+Robbinsdale
+Dayton
+Spring Lake Park
+Lake Elmo
+Hugo
+Arden Hills
+Norwood Young America
+Oak Park Heights
+Edina
+Bemidji
+Crystal
+St. Louis Park
+Lino Lakes
+East Bethel
+Saint Cloud
+Moorhead
+Newport
+Watertown
+White Bear Township
+Alexandria
+Elk River
+Wayzata
+Owatonna
+Saint Anthony
+Mankato
+Saint Paul Park
+Winona
+Saint Francis
+Brainerd
+Fergus Falls
+Willmar
+Tonka Bay
+Greenfield
+Faribault
+Sartell
+Grand Rapids
+Mayer
+Sauk Rapids
+Detroit Lakes
+Marshall
+New Hope
+Mahtomedi
+Thief River Falls
+Bayport
+Austin
+Albert Lea
+Victoria
+Northfield
+New Ulm
+Monticello
+East Grand Forks
+Falcon Heights
+Columbus
+Carver
+New Market Township
+Little Falls
+Hutchinson
+Saint Michael
+Louisville Township
+Elko New Market
+Lexington
+Sand Creek Township
+Fairmont
+Cloquet
+Buffalo
+Zimmerman
+Cologne
+Lauderdale
+Park Rapids
+Big Lake
+Centerville
+Princeton
+Red Wing
+Circle Pines
+Scandia
+Otsego
+Saint Peter
+Cambridge
+Castle Rock Township
+Worthington
+North Mankato
+Montevideo
+Perham
+Byron
+Foley
+Sauk Centre
+Crookston
+Pipestone
+Pierz
+Afton
+Roseau
+Rice
+Becker
+Stewartville
+Saint Louis Park
+Pine City
+Jackson Township
+Lakeland
+Wadena
+Kasson
+Waseca
+North Oaks
+North Branch
+Redwood Falls
+Windom
+St Louis Park
+Empire
+Lake City
+Cold Spring
+Avon
+Morris
+Hawley
+Luverne
+Dahlgren Township
+Waterford Township
+Denmark Township
+Mora
+Albany
+Sleepy Eye
+Oak Grove
+Waconia Township
+Isanti
+Baxter
+Albertville
+Hibbing
+Litchfield
+Saint Joseph
+Nowthen
+Randolph Township
+Gem Lake
+Melrose
+Glencoe
+Breckenridge
+Plainview
+West St Paul
+Coates
+Marshan Township
+Virginia
+International Falls
+Lonsdale
+Grant
+Glenwood
+Pine Island
+Dodge Center
+Delano
+South St Paul
+Excelsior
+Hampton
+Canby
+La Crescent
+Zumbrota
+Wyoming
+Long Prairie
+Blooming Prairie
+Watertown Township
+Spring Lake Township
+Le Sueur
+Dilworth
+New London
+Lake Crystal
+Cannon Falls
+Warroad
+Barnesville
+Saint Charles
+Aitkin
+Montgomery
+Bagley
+Chatfield
+New Germany
+Hollywood Township
+Mendota
+Willernie
+Milaca
+Waite Park
+Springfield
+Edgerton
+Lewiston
+Olivia
+Benson
+Gaylord
+Rush City
+Staples
+Paynesville
+Houston
+Holdingford
+Spicer
+Elgin
+Hilltop
+Lilydale
+Vermillion Township
+Wabasha
+Pelican Rapids
+Two Harbors
+Walker
+Le Center
+Janesville
+Annandale
+Saint James
+New York Mills
+Frazee
+Caledonia
+Helena Township
+Fosston
+Royalton
+Spring Valley
+Eyota
+Winsted
+Minneota
+Cottonwood
+Blue Earth
+Waverly
+Richmond
+Freeport
+Eagle Lake
+Benton Township
+Laketown Township
+Randolph
+Red Lake Falls
+Hermantown
+Slayton
+Jackson
+Wells
+Hamburg
+Eureka Township
+Miesville
+Credit River
+Ada
+Baudette
+Maple Lake
+Lester Prairie
+Granite Falls
+Fulda
+Goodhue
+Wheaton
+Ortonville
+Cass Lake
+Osakis
+Winthrop
+Clearwater
+Bethel
+Young America Township
+Deer River
+Hallock
+Mahnomen
+Onamia
+Waterville
+Chisholm
+Adrian
+Bertha
+Grand Meadow
+Lakefield
+Dawson
+Ely
+Wabasso
+Medford
+Truman
+Eden Valley
+Howard Lake
+Rockford
+Fertile
+Lindstrom
+Watkins
+Arlington
+Linwood Township
+Vermillion
+West Lakeland Township
+Tyler
+Lamberton
+Browerville
+Kenyon
+Cokato
+Karlstad
+Starbuck
+Chisago City
+Henderson
+Warren
+Hinckley
+Lake Benton
+Greenbush
+Mountain Lake
+Eveleth
+Pine River
+Tracy
+Montrose
+Braham
+Nisswa
+Brandon
+Bovey
+Mcgregor
+Elbow Lake
+Madison
+Clear Lake
+Madelia
+Esko
+South Haven
+Hampton Township
+Blakeley Township
+Saint Lawrence Township
+Lake Saint Croix Beach
+Crosby
+Grand Marais
+Morgan
+Proctor
+Hokah
+Bird Island
+Spring Grove
+Mountain Iron
+Clara City
+Atwater
+Sebeka
+Mapleton
+Ellendale
+Morristown
+Saint Augusta
+Renville
+Dundas
+Greenvale Township
+Cedar Lake Township
+North St Paul
+Belgrade
+Alden
+Isle
+Nicollet
+Nevis
+Swanville
+Rushford
+Mazeppa
+Coleraine
+Clinton
+Erskine
+Cohasset
+Graceville
+Hayfield
+Carlton
+Sherburn
+Laporte
+Balaton
+Westbrook
+Audubon
+Lake Park
+New Richland
+Carlos
+Backus
+Stacy
+Randall
+Oak Park
+Minnesota City
+Nininger Township
+Lakeland Shores
+Marine on Saint Croix
+Appleton
+Hendricks
+Trimont
+Hill City
+Gibbon
+Newfolden
+Henning
+Glenville
+Adams
+Granada
+Preston
+Red Lake
+Ivanhoe
+Parkers Prairie
+Pillager
+Cedar
+Nashwauk
+Blackduck
+Lyle
+Comfrey
+Lancaster
+Rothsay
+Wrenshall
+Miltona
+Brownton
+Dassel
+Winnebago
+Garfield
+Welcome
+Harris
+Rose Creek
+Russell
+New Market
+San Francisco Township
+Camden Township
+Belle Plaine Township
+Dellwood
+Aurora
+Argyle
+Rollingstone
+Mabel
+Hills
+Hancock
+Kimball
+Underwood
+Glyndon
+Remer
+Grove City
+Sandstone
+Lynd
+Verndale
+Heron Lake
+Ogilvie
+Buffalo Lake
+Barnum
+Pequot Lakes
+Okabena
+Grey Eagle
+Cook
+Lanesboro
+Hector
+Breezy Point
+Silver Lake
+Foreston
+West Concord
+Bigfork
+Wykoff
+Green Isle
+Lowry
+Hoffman
+Racine
+Deerwood
+Ironton
+Motley
+New Trier
+May Township
+Babbitt
+Kelliher
+Murdock
+Saint Bonifacius
+Courtland
+Moose Lake
+Marble
+Keewatin
+Stephen
+Battle Lake
+Le Roy
+Nerstrand
+Cleveland
+Lake Lillian
+Finlayson
+Menahga
+Herman
+Raymond
+Willow River
+Milroy
+Kerkhoven
+Ulen
+Ellsworth
+Saint Clair
+Prinsburg
+Chokio
+Brewster
+Fairfax
+Barrett
+Kellogg
+Rockville
+Browns Valley
+Silver Bay
+Shafer
+Clearbrook
+Littlefork
+Northome
+Evansville
+Clarkfield
+Webster
+Mantorville
+East Gull Lake
+Merrifield
+Rushmore
+Oronoco
+Dalton
+Wood Lake
+St Paul Park
+Reading
+Plato
+Bluffton
+Amboy
+Hancock Township
+Douglas Township
+Baytown Township
+Grey Cloud Island Township
+Walnut Grove
+Upsala
+Plummer
+Oklee
+Lewisville
+Butterfield
+Harmony
+Tower
+Collegeville
+Grygla
+Pemberton
+Fisher
+Cromwell
+Climax
+Crosslake
+Twin Valley
+Hoyt Lakes
+Waldorf
+Beaver Creek
+Tofte
+Marine On Saint Croix
+Floodwood
+Hanska
+Elysian
+Ashby
+Shorewood
+Culver
+Mcintosh
+Taylors Falls
+Eagle Bend
+Campbell
+Badger
+Viking
+Orr
+Northrop
+Wanamingo
+Buhl
+Brooten
+Brownsdale
+Cosmos
+Solway
+Dexter
+Greenwald
+Elmore
+Saginaw
+Franklin
+Dakota
+Madison Lake
+St Bonifacius
+Taconite
+Garrison
+Halstad
+Good Thunder
+Sabin
+Brook Park
+Fort Ripley
+Clarissa
+Sanborn
+Brownsville
+White Bear
+Lucan
+Sturgeon Lake
+Utica
+Askov
+Arco
+Hanley Falls
+Saint Martin
+Tenstrike
+Porter
+Ottertail
+Lake Wilson
+Jasper
+Middle River
+Kandiyohi
+Cushing
+Zumbro Falls
+Vesta
+Steen
+Shevlin
+Hewitt
+Nelson
+Kasota
+Salol
+Ravenna Township
+Sciota Township
+Saint Marys Point
+Landfall
+St. Paul
+Effie
+Bena
+Kensington
+Angle Inlet
+White Earth
+Warba
+Grand Portage
+Goodridge
+Maynard
+Naytahwaush
+Mn 55021
+Waubun
+Iron
+Gilbert
+Ogema
+Hollandale
+Ponsford
+Pease
+Echo
+Milan
+Togo
+Ponemah
+Britt
+Ruthton
+Calumet
+Norwood-Young America
+Longville
+Center City
+Mn 56201
+Darfur
+Saint Vincent
+Wahkon
+Emily
+Markville
+Orono
+St Anthony Village
+So Int'L Falls
+Marine On St Croix
+Kiester
+Danvers
+De Graff
+Grasston
+Kinney
+Woodstock
+Pinewood
+Bowlus
+Emmons
+Elrosa
+Linwood
+Pengilly
+Alvarado
+Villard
+Norcross
+Walters
+Finland
+Clitherall
+Alborn
+Revere
+Vernon Center
+Jenkins
+Deer Creek
+Blomkest
+Sunfish Lake
+Winton
+Huntley
+Seaforth
+Hitterdal
+Holt
+Clarks Grove
+Darwin
+Trail
+Dennison
+Gonvick
+Ceylon
+Pennock
+Alberta
+Hines
+Stewart
+White Bear Tp
+Hamel
+Farwell
+Wilmont
+Burtrum
+Little Sauk
+Mentor
+Hillman
+Magnolia
+Winger
+Canton
+Richville
+Sawyer
+Claremont
+Gary
+Vergas
+Flensburg
+Clontarf
+Beardsley
+Frontenac
+Erhard
+Saint Stephen
+Ostrander
+Ghent
+Elko
+Dalbo
+Geneva
+Easton
+Belview
+Minnesota Lake
+Bruno
+Leonard
+Elizabeth
+Hatfield
+Morton
+Meire Grove
+Wilton
+Conger
+Leroy
+Inver Grove
