@@ -1,0 +1,27 @@
+Loading existing buildings from Supabase...
+  Loaded 59662 buildings
+  Built address index with 58578 entries
+  Sample Saint Paul keys: ['2480 7TH AVE|NORTH SAINT PAUL', '2176 BURKE AVE|NORTH SAINT PAUL', '2122 6TH ST|NORTH SAINT PAUL', '2134 5TH ST|NORTH SAINT PAUL', '374 WHEELER ST|SAINT PAUL']
+
+--- RAMSEY COUNTY TAXPAYER ENRICHMENT ---
+  Fetched 25000 Ramsey records, 971 matched...
+  Fetched 50000 Ramsey records, 1635 matched...
+  Fetched 75000 Ramsey records, 2483 matched...
+  Fetched 100000 Ramsey records, 3674 matched...
+  Fetched 125000 Ramsey records, 5045 matched...
+  Fetched 150000 Ramsey records, 5999 matched...
+  Total Ramsey records scanned: 167159
+  Matched entity taxpayers to buildings: 6338
+  Inserted: 6338
+
+--- ST PAUL COMMERCIAL C of O ENRICHMENT ---
+  Total C of O records: 4111
+  Matched to buildings: 895
+  Inserted: 895
+
+============================================================
+ENRICHMENT COMPLETE
+  Ramsey taxpayers matched:  6,338
+  St Paul C of O matched:   895
+  Total new contacts:        7,233
+  Inserted to Supabase:      7,233

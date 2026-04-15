@@ -1,0 +1,12 @@
+{
+  "ramsey_county": {
+    "records_scanned": 167159,
+    "entity_matches": 6338,
+    "contacts_inserted": 6338
+  },
+  "stpaul_cofo": {
+    "records_fetched": 4111,
+    "matches": 895,
+    "contacts_inserted": 895
+  }
+}
