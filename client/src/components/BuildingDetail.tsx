@@ -38,10 +38,13 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   office:     { label: "Office",     color: "bg-[#9B8EC4]/15 text-[#9B8EC4]" },
   industrial: { label: "Industrial", color: "bg-[#7C8A96]/15 text-[#7C8A96]" },
   government: { label: "Government", color: "bg-[#4ADE80]/15 text-[#4ADE80]" },
-  school:     { label: "School",     color: "bg-[#34D399]/15 text-[#34D399]" },
-  hospital:   { label: "Hospital",   color: "bg-[#F87171]/15 text-[#F87171]" },
-  retail:     { label: "Retail",     color: "bg-[#C17A2E]/15 text-[#C17A2E]" },
-  "mixed-use":{ label: "Mixed-Use",  color: "bg-[#C084FC]/15 text-[#C084FC]" },
+  school:        { label: "School",        color: "bg-[#34D399]/15 text-[#34D399]" },
+  hospital:      { label: "Hospital",      color: "bg-[#F87171]/15 text-[#F87171]" },
+  retail:        { label: "Retail",        color: "bg-[#C17A2E]/15 text-[#C17A2E]" },
+  "mixed-use":   { label: "Mixed-Use",     color: "bg-[#C084FC]/15 text-[#C084FC]" },
+  healthcare:    { label: "Healthcare",    color: "bg-[#FB923C]/15 text-[#FB923C]" },
+  nursing_home:  { label: "Nursing Home",  color: "bg-[#FDA4AF]/15 text-[#FDA4AF]" },
+  boarding_care: { label: "Boarding Care", color: "bg-[#FDBA74]/15 text-[#FDBA74]" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -65,7 +68,23 @@ const SOURCE_LABELS: Record<string, string> = {
   "metrogis-owner":       "MetroGIS Parcels",
   "metrogis-6-counties-owner": "MetroGIS",
   "rental-license-owner": "Rental License",
-  "hud-owner":            "HUD",
+  "hud-owner":                  "HUD",
+  "osm-overpass":                "OpenStreetMap",
+  "irs-eo":                      "IRS Nonprofits",
+  "mn-hospitals":                "MN Hospitals",
+  "mn-nursing-homes":            "MN Nursing Homes",
+  "mn-doh-healthcare":           "MN DOH Healthcare",
+  "mn-schools":                  "MN Schools",
+  "mpls-liquor-license":         "Mpls Liquor License",
+  "cms-nursing-home":            "CMS Nursing Home",
+  "cms-hospital":                "CMS Hospital",
+  "cms-home-health":             "CMS Home Health",
+  "cms-dialysis":                "CMS Dialysis",
+  "metrogis-ramsey-owner":       "MetroGIS Ramsey",
+  "metrogis-dakota-owner":       "MetroGIS Dakota",
+  "metrogis-anoka-owner":        "MetroGIS Anoka",
+  "metrogis-washington-owner":   "MetroGIS Washington",
+  "community-owner":             "Community",
 };
 
 const NOTE_TYPE_LABELS: Record<string, string> = {
