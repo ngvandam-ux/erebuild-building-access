@@ -10,6 +10,7 @@ import { List, Map } from "lucide-react";
 import type { Building } from "@/hooks/useBuildings";
 import type { MapBounds } from "@/hooks/useBuildings";
 import { useContactLevels } from "@/hooks/useBuildings";
+import { useGeoFence } from "@/hooks/useGeoFence";
 import Sidebar from "@/components/Sidebar";
 import BuildingMap from "@/components/BuildingMap";
 
@@ -23,6 +24,9 @@ function MainView() {
 
   // Shared contact set — used by both Sidebar and Map
   const { data: contactSet } = useContactLevels();
+
+  // Geo-fence from Erebuild office_locations
+  const { data: geoFence } = useGeoFence();
 
   const handleSelectBuilding = useCallback((building: Building | null) => {
     setSelectedBuilding(building);
@@ -58,6 +62,7 @@ function MainView() {
               buildings={mapBuildings}
               selectedBuilding={selectedBuilding}
               contactSet={contactSet}
+              geoFence={geoFence}
               onBoundsChange={handleBoundsChange}
               onSelectBuilding={handleMapMarkerClick}
             />
@@ -130,6 +135,7 @@ function MainView() {
           buildings={mapBuildings}
           selectedBuilding={selectedBuilding}
           contactSet={contactSet}
+          geoFence={geoFence}
           onBoundsChange={handleBoundsChange}
           onSelectBuilding={handleMapMarkerClick}
         />

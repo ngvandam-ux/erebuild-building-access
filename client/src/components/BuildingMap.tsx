@@ -4,6 +4,7 @@ import "leaflet.markercluster";
 import { Map as MapIcon, Satellite } from "lucide-react";
 import type { Building } from "@/hooks/useBuildings";
 import type { MapBounds } from "@/hooks/useBuildings";
+import type { GeoFence } from "@/hooks/useGeoFence";
 
 // ─── Cached DivIcon pool (avoid creating new icons on every render) ──────────
 const iconCache = new Map<string, L.DivIcon>();
@@ -51,6 +52,7 @@ interface BuildingMapProps {
   buildings: Building[];
   selectedBuilding: Building | null;
   contactSet?: Set<number>;
+  geoFence?: GeoFence | null;
   onBoundsChange: (bounds: MapBounds) => void;
   onSelectBuilding: (building: Building) => void;
 }
@@ -59,6 +61,7 @@ export default function BuildingMap({
   buildings,
   selectedBuilding,
   contactSet,
+  geoFence,
   onBoundsChange,
   onSelectBuilding,
 }: BuildingMapProps) {
@@ -85,11 +88,29 @@ export default function BuildingMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    const map = L.map(containerRef.current, {
-      center: [44.9778, -93.265],
+    // Use geo-fence centroid if available, otherwise default to Twin Cities
+    const initCenter: [number, number] = geoFence
+      ? [geoFence.center.lat, geoFence.center.lng]
+      : [44.9778, -93.265];
+
+    const mapOptions: L.MapOptions = {
+      center: initCenter,
       zoom: 12,
       zoomControl: true,
-    });
+    };
+
+    // Apply max bounds from geo-fence (~200mi radius from office centroid)
+    if (geoFence) {
+      const { north, south, east, west } = geoFence.maxBounds;
+      mapOptions.maxBounds = L.latLngBounds(
+        L.latLng(south, west),
+        L.latLng(north, east)
+      );
+      mapOptions.maxBoundsViscosity = 0.9; // strong resistance at edges
+      mapOptions.minZoom = 7; // prevent zooming out too far
+    }
+
+    const map = L.map(containerRef.current, mapOptions);
 
     const streetLayer = L.tileLayer(
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
@@ -165,6 +186,28 @@ export default function BuildingMap({
       buildingMapRef.current.clear();
     };
   }, []);
+
+  // ── Apply geo-fence bounds when data arrives (after map init) ──
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !geoFence) return;
+
+    const { north, south, east, west } = geoFence.maxBounds;
+    const bounds = L.latLngBounds(
+      L.latLng(south, west),
+      L.latLng(north, east)
+    );
+    map.setMaxBounds(bounds);
+    map.setMinZoom(7);
+
+    // If map is currently outside the fence, fly to centroid
+    const currentCenter = map.getCenter();
+    if (!bounds.contains(currentCenter)) {
+      map.flyTo([geoFence.center.lat, geoFence.center.lng], 10, {
+        duration: 1.2,
+      });
+    }
+  }, [geoFence]);
 
   // ── Switch tiles ──
   useEffect(() => {

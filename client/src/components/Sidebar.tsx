@@ -13,6 +13,7 @@ import {
   type MapBounds,
 } from "@/hooks/useBuildings";
 import type { Building } from "@/hooks/useBuildings";
+import { useGeoFence } from "@/hooks/useGeoFence";
 import BuildingDetail from "./BuildingDetail";
 
 
@@ -96,6 +97,25 @@ const SOURCE_LABELS: Record<string, string> = {
   "hud":                "HUD Multifamily",
   "community":          "Community Contributions",
 };
+
+// ─── Region label (dynamic from geo-fence) ─────────────────────────────
+function RegionLabel() {
+  const { data: geoFence } = useGeoFence();
+
+  // Build a region label from unique states in office locations
+  const label = (() => {
+    if (!geoFence?.offices?.length) return "Loading...";
+    const cities = geoFence.offices.map((o) => o.city);
+    const states = [...new Set(geoFence.offices.map((o) => o.state))];
+    if (cities.length === 1) return `${cities[0]}, ${states[0]}`;
+    if (cities.length <= 3) return cities.join(" / ");
+    return `${states.join(", ")} Region`;
+  })();
+
+  return (
+    <p className="text-[10px] text-muted-foreground leading-none mt-0.5">{label}</p>
+  );
+}
 
 // ─── Settings Popover (live data info) ──────────────────────────────────
 function DataSettings() {
@@ -470,7 +490,7 @@ export default function Sidebar({
             <p className="text-xs font-bold leading-none tracking-tight text-foreground">
               Building Access
             </p>
-            <p className="text-[10px] text-muted-foreground leading-none mt-0.5">Twin Cities</p>
+            <RegionLabel />
           </div>
         </div>
         <DataSettings />
