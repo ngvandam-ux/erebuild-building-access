@@ -45,6 +45,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   healthcare:    { label: "Healthcare",    color: "bg-[#FB923C]/15 text-[#FB923C]" },
   nursing_home:  { label: "Nursing Home",  color: "bg-[#FDA4AF]/15 text-[#FDA4AF]" },
   boarding_care: { label: "Boarding Care", color: "bg-[#FDBA74]/15 text-[#FDBA74]" },
+  childcare:     { label: "Childcare",     color: "bg-[#A78BFA]/15 text-[#A78BFA]" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -85,6 +86,9 @@ const SOURCE_LABELS: Record<string, string> = {
   "metrogis-anoka-owner":        "MetroGIS Anoka",
   "metrogis-washington-owner":   "MetroGIS Washington",
   "community-owner":             "Community",
+  "mn-childcare":                 "MN Childcare",
+  "mn-dhs-childcare":             "MN DHS Childcare",
+  "npi-registry":                 "NPI Registry",
 };
 
 const NOTE_TYPE_LABELS: Record<string, string> = {
