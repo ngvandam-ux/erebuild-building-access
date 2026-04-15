@@ -120,18 +120,72 @@ export function useMapBuildings(bounds: MapBounds | null, type?: string) {
   });
 }
 
-// Search buildings by text
+// Search buildings by text — smart multi-field search
+// Searches building name, address, city, zip, owner, taxpayer AND contact names/notes
 export function useSearchBuildings(query: string) {
   return useQuery<Building[]>({
     queryKey: ["buildings/search", query],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const q = query.trim();
+      if (!q) return [];
+
+      // Phase 1: Search buildings table directly (name, address, city, zip, owner, taxpayer)
+      const buildingSearch = supabase
         .from("ba_buildings")
         .select(LIST_FIELDS)
-        .or(`name.ilike.%${query}%,address.ilike.%${query}%,owner_name.ilike.%${query}%`)
-        .limit(100);
-      if (error) throw error;
-      return (data ?? []) as Building[];
+        .or(`name.ilike.%${q}%,address.ilike.%${q}%,city.ilike.%${q}%,zip.ilike.%${q}%,owner_name.ilike.%${q}%,taxpayer_name.ilike.%${q}%`)
+        .limit(200);
+
+      // Phase 2: Search contacts table (name, notes) to find building_ids
+      const contactSearch = supabase
+        .from("ba_contacts")
+        .select("building_id")
+        .or(`name.ilike.%${q}%,notes.ilike.%${q}%`)
+        .limit(500);
+
+      const [bResult, cResult] = await Promise.all([
+        buildingSearch,
+        contactSearch,
+      ]);
+
+      if (bResult.error) throw bResult.error;
+
+      // Merge: start with building matches
+      const seen = new Set<number>();
+      const merged: Building[] = [];
+      for (const b of (bResult.data ?? []) as Building[]) {
+        if (!seen.has(b.id)) {
+          seen.add(b.id);
+          merged.push(b);
+        }
+      }
+
+      // Add buildings from contact matches (if not already in results)
+      if (!cResult.error && cResult.data && cResult.data.length > 0) {
+        const contactBids = [...new Set(cResult.data.map((c) => c.building_id))];
+        const missingBids = contactBids.filter((id) => !seen.has(id));
+
+        if (missingBids.length > 0) {
+          // Fetch those buildings in batches of 50
+          for (let i = 0; i < missingBids.length && merged.length < 300; i += 50) {
+            const batch = missingBids.slice(i, i + 50);
+            const { data: extra } = await supabase
+              .from("ba_buildings")
+              .select(LIST_FIELDS)
+              .in("id", batch);
+            if (extra) {
+              for (const b of extra as Building[]) {
+                if (!seen.has(b.id)) {
+                  seen.add(b.id);
+                  merged.push(b);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return merged;
     },
     enabled: query.length >= 2,
     staleTime: 30_000,

@@ -10,7 +10,6 @@ import {
   useSearchBuildings,
   useStats,
   useDataSourceCounts,
-  useContactLevels,
   type MapBounds,
 } from "@/hooks/useBuildings";
 import type { Building } from "@/hooks/useBuildings";
@@ -360,6 +359,7 @@ function StatsBar() {
 interface SidebarProps {
   bounds: MapBounds | null;
   selectedBuilding: Building | null;
+  contactSet?: Set<number>;
   onSelectBuilding: (building: Building | null) => void;
   onMapBuildings: (buildings: Building[]) => void;
 }
@@ -367,6 +367,7 @@ interface SidebarProps {
 export default function Sidebar({
   bounds,
   selectedBuilding,
+  contactSet,
   onSelectBuilding,
   onMapBuildings,
 }: SidebarProps) {
@@ -385,8 +386,7 @@ export default function Sidebar({
 
   const isSearching = debouncedSearch.length >= 2;
 
-  // Contact levels: Set of building_ids that have phone/email contacts
-  const { data: contactSet } = useContactLevels();
+  // contactSet is now passed from parent (App.tsx) to share with BuildingMap
 
   const { data: mapBuildings, isLoading: mapLoading } = useMapBuildings(
     isSearching ? null : bounds,
@@ -459,7 +459,7 @@ export default function Sidebar({
                 type="search"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search by address or owner..."
+                placeholder="Search name, address, city, owner, contact..."
                 className="pl-8 pr-8 text-xs h-9"
                 data-testid="input-building-search"
               />

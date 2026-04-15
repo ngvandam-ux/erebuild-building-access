@@ -9,6 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { List, Map } from "lucide-react";
 import type { Building } from "@/hooks/useBuildings";
 import type { MapBounds } from "@/hooks/useBuildings";
+import { useContactLevels } from "@/hooks/useBuildings";
 import Sidebar from "@/components/Sidebar";
 import BuildingMap from "@/components/BuildingMap";
 
@@ -19,6 +20,9 @@ function MainView() {
   const [mapBuildings, setMapBuildings] = useState<Building[]>([]);
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
   const isMobile = useIsMobile();
+
+  // Shared contact set — used by both Sidebar and Map
+  const { data: contactSet } = useContactLevels();
 
   const handleSelectBuilding = useCallback((building: Building | null) => {
     setSelectedBuilding(building);
@@ -53,6 +57,7 @@ function MainView() {
             <BuildingMap
               buildings={mapBuildings}
               selectedBuilding={selectedBuilding}
+              contactSet={contactSet}
               onBoundsChange={handleBoundsChange}
               onSelectBuilding={handleMapMarkerClick}
             />
@@ -65,6 +70,7 @@ function MainView() {
             <Sidebar
               bounds={mapBounds}
               selectedBuilding={selectedBuilding}
+              contactSet={contactSet}
               onSelectBuilding={handleSelectBuilding}
               onMapBuildings={handleMapBuildings}
             />
@@ -113,6 +119,7 @@ function MainView() {
         <Sidebar
           bounds={mapBounds}
           selectedBuilding={selectedBuilding}
+          contactSet={contactSet}
           onSelectBuilding={handleSelectBuilding}
           onMapBuildings={handleMapBuildings}
         />
@@ -122,6 +129,7 @@ function MainView() {
         <BuildingMap
           buildings={mapBuildings}
           selectedBuilding={selectedBuilding}
+          contactSet={contactSet}
           onBoundsChange={handleBoundsChange}
           onSelectBuilding={handleMapMarkerClick}
         />

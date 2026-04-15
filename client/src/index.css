@@ -220,22 +220,39 @@
 
 /* ─── Custom div markers ─── */
 .map-marker {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  opacity: 0.6;
 }
 
 .map-marker:hover {
-  transform: scale(1.4);
+  transform: scale(1.6);
+  opacity: 1;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.5), 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Buildings WITH contact info — bigger, brighter, with green ring */
+.map-marker.has-contact {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #4ADE80;
+  opacity: 1;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.35), 0 0 6px rgba(74, 222, 128, 0.25), 0 0 3px rgba(0, 0, 0, 0.4);
+}
+
+.map-marker.has-contact:hover {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.5), 0 0 10px rgba(74, 222, 128, 0.3), 0 0 4px rgba(0, 0, 0, 0.4);
 }
 
 .map-marker.selected {
   transform: scale(1.8);
+  opacity: 1;
   border-color: #fff;
   box-shadow: 0 0 0 3px rgba(212, 165, 71, 0.9), 0 0 14px rgba(212, 165, 71, 0.5), 0 0 4px rgba(0, 0, 0, 0.5);
 }
@@ -292,7 +309,7 @@
 .marker-hospital   { background: #F87171; }  /* red */
 .marker-retail     { background: #C17A2E; }  /* erebuild gold-hover */
 .marker-mixed-use  { background: #C084FC; }  /* violet */
-.marker-default    { background: #5A5854; }  /* erebuild text-muted */
+.marker-default    { background: #4A4844; }  /* subtle muted */
 
 /* ─── MarkerCluster Erebuild override ─── */
 .marker-cluster {

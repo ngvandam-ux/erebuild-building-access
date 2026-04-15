@@ -23,15 +23,21 @@ function markerClass(type: string | null | undefined): string {
   }
 }
 
-function getCachedIcon(type: string | null | undefined, selected: boolean): L.DivIcon {
-  const key = `${type ?? "default"}-${selected ? "s" : "n"}`;
+function getCachedIcon(
+  type: string | null | undefined,
+  selected: boolean,
+  hasContact: boolean
+): L.DivIcon {
+  const key = `${type ?? "default"}-${selected ? "s" : "n"}-${hasContact ? "c" : "x"}`;
   let icon = iconCache.get(key);
   if (!icon) {
+    const contactClass = hasContact ? " has-contact" : "";
+    const selClass = selected ? " selected" : "";
     icon = L.divIcon({
       className: "",
-      html: `<div class="map-marker ${markerClass(type)}${selected ? " selected" : ""}"></div>`,
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
+      html: `<div class="map-marker ${markerClass(type)}${selClass}${contactClass}"></div>`,
+      iconSize: hasContact ? [18, 18] : [12, 12],
+      iconAnchor: hasContact ? [9, 9] : [6, 6],
     });
     iconCache.set(key, icon);
   }
@@ -44,6 +50,7 @@ type TileMode = "street" | "satellite";
 interface BuildingMapProps {
   buildings: Building[];
   selectedBuilding: Building | null;
+  contactSet?: Set<number>;
   onBoundsChange: (bounds: MapBounds) => void;
   onSelectBuilding: (building: Building) => void;
 }
@@ -51,6 +58,7 @@ interface BuildingMapProps {
 export default function BuildingMap({
   buildings,
   selectedBuilding,
+  contactSet,
   onBoundsChange,
   onSelectBuilding,
 }: BuildingMapProps) {
@@ -65,11 +73,13 @@ export default function BuildingMap({
   const onSelectBuildingRef = useRef(onSelectBuilding);
   const selectedIdRef = useRef<number | null>(null);
   const prevSelectedIdRef = useRef<number | null>(null);
+  const contactSetRef = useRef<Set<number>>(new Set());
   const [tileMode, setTileMode] = useState<TileMode>("street");
 
   // Keep refs current
   useEffect(() => { onBoundsChangeRef.current = onBoundsChange; }, [onBoundsChange]);
   useEffect(() => { onSelectBuildingRef.current = onSelectBuilding; }, [onSelectBuilding]);
+  useEffect(() => { contactSetRef.current = contactSet ?? new Set(); }, [contactSet]);
 
   // ── Initialize map once ──
   useEffect(() => {
@@ -94,7 +104,13 @@ export default function BuildingMap({
     tileLayersRef.current = [streetLayer];
 
     const clusterGroup = L.markerClusterGroup({
-      maxClusterRadius: 50,
+      maxClusterRadius: (zoom: number) => {
+        // More aggressive clustering when zoomed out, loose when zoomed in
+        if (zoom <= 10) return 120;
+        if (zoom <= 12) return 80;
+        if (zoom <= 14) return 60;
+        return 40;
+      },
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
       zoomToBoundsOnClick: true,
@@ -221,8 +237,9 @@ export default function BuildingMap({
       const existing = prev.get(building.id);
 
       if (!existing) {
+        const hasContact = contactSetRef.current.has(building.id);
         const marker = L.marker([building.lat, building.lng], {
-          icon: getCachedIcon(building.building_type, building.id === selId),
+          icon: getCachedIcon(building.building_type, building.id === selId, hasContact),
         });
 
         // Use a closure-free click handler that reads from ref
@@ -244,6 +261,22 @@ export default function BuildingMap({
     }
   }, [buildings]);  // only re-run when the buildings array changes, NOT on selection
 
+  // ── Update marker icons when contactSet changes (e.g. data loads) ──
+  useEffect(() => {
+    if (!contactSet || contactSet.size === 0) return;
+    const prev = markersRef.current;
+    const bMap = buildingMapRef.current;
+    const selId = selectedIdRef.current;
+
+    for (const [id, marker] of prev.entries()) {
+      const building = bMap.get(id);
+      if (!building) continue;
+      const hasContact = contactSet.has(id);
+      const isSel = id === selId;
+      marker.setIcon(getCachedIcon(building.building_type, isSel, hasContact));
+    }
+  }, [contactSet]);
+
   // ── Lightweight selection highlight (only touches 2 markers: old + new) ──
   useEffect(() => {
     const prev = markersRef.current;
@@ -258,7 +291,8 @@ export default function BuildingMap({
       const oldMarker = prev.get(oldId);
       const oldBuilding = bMap.get(oldId);
       if (oldMarker && oldBuilding) {
-        oldMarker.setIcon(getCachedIcon(oldBuilding.building_type, false));
+        const oldHasContact = contactSetRef.current.has(oldId);
+        oldMarker.setIcon(getCachedIcon(oldBuilding.building_type, false, oldHasContact));
       }
     }
 
@@ -267,7 +301,8 @@ export default function BuildingMap({
       const newMarker = prev.get(newId);
       const newBuilding = bMap.get(newId);
       if (newMarker && newBuilding) {
-        newMarker.setIcon(getCachedIcon(newBuilding.building_type, true));
+        const newHasContact = contactSetRef.current.has(newId);
+        newMarker.setIcon(getCachedIcon(newBuilding.building_type, true, newHasContact));
       }
     }
 
@@ -292,6 +327,57 @@ export default function BuildingMap({
         style={{ width: "100%", height: "100%" }}
         data-testid="leaflet-map"
       />
+
+      {/* Map legend */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 28,
+          left: 10,
+          zIndex: 1000,
+          background: "rgba(10, 16, 30, 0.85)",
+          backdropFilter: "blur(4px)",
+          borderRadius: 4,
+          padding: "6px 10px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          fontSize: 10,
+          color: "#E8E4DC",
+          fontFamily: "var(--font-sans)",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+        }}
+        data-testid="map-legend"
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              border: "2px solid #4ADE80",
+              background: "#D4A547",
+              boxShadow: "0 0 0 2px rgba(74,222,128,0.35)",
+              display: "inline-block",
+            }}
+          />
+          Has Contact
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              border: "1.5px solid rgba(255,255,255,0.5)",
+              background: "#4A4844",
+              opacity: 0.6,
+              display: "inline-block",
+            }}
+          />
+          No Contact
+        </span>
+      </div>
 
       <div className="tile-toggle" data-testid="tile-toggle">
         <button
