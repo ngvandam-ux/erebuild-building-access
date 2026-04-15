@@ -72,6 +72,10 @@ export interface Stats {
   buildings: number;
   contacts: number;
   notes: number;
+  phones: number;
+  emails: number;
+  dataSources: number;
+  lastUpdated: string | null;
 }
 
 // ─── Hooks ──────────────────────────────────────────────────────────────────
@@ -219,15 +223,32 @@ export function useStats() {
   return useQuery<Stats>({
     queryKey: ["stats"],
     queryFn: async () => {
-      const [b, c, n] = await Promise.all([
+      const [b, c, n, p, e, sources, lastEntry] = await Promise.all([
         supabase.from("ba_buildings").select("id", { count: "exact", head: true }),
         supabase.from("ba_contacts").select("id", { count: "exact", head: true }),
         supabase.from("ba_building_notes").select("id", { count: "exact", head: true }),
+        supabase.from("ba_contacts").select("id", { count: "exact", head: true }).not("phone", "is", null),
+        supabase.from("ba_contacts").select("id", { count: "exact", head: true }).not("email", "is", null),
+        supabase.from("ba_contacts").select("source").limit(1000),
+        supabase.from("ba_contacts").select("created_at").order("created_at", { ascending: false }).limit(1),
       ]);
+
+      // Count unique data sources
+      const uniqueSources = new Set<string>();
+      if (sources.data) {
+        for (const row of sources.data) {
+          if (row.source) uniqueSources.add(row.source);
+        }
+      }
+
       return {
         buildings: b.count ?? 0,
         contacts: c.count ?? 0,
         notes: n.count ?? 0,
+        phones: p.count ?? 0,
+        emails: e.count ?? 0,
+        dataSources: uniqueSources.size,
+        lastUpdated: lastEntry.data?.[0]?.created_at ?? null,
       };
     },
     staleTime: 60_000,

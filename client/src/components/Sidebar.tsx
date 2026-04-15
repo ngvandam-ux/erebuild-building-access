@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useMemo, memo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Search, Building2, Settings, X, Loader2, ArrowUpDown, ChevronDown, Phone, Mail } from "lucide-react";
+import { Search, Building2, Settings, X, Loader2, ArrowUpDown, ChevronDown, Phone, Mail, Database, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -323,33 +323,67 @@ function VirtualBuildingList({
 }
 
 // ─── Stats bar ────────────────────────────────────────────────────────────
+function formatLastUpdated(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
 function StatsBar() {
   const { data: stats } = useStats();
 
   return (
     <div
-      className="flex items-center justify-around py-2 px-3 border-t border-border text-center shrink-0"
+      className="border-t border-border shrink-0"
       data-testid="stats-bar"
     >
-      <div>
-        <p className="text-sm font-semibold" data-testid="stat-buildings">
-          {stats?.buildings?.toLocaleString() ?? "—"}
-        </p>
-        <p className="text-[10px] text-muted-foreground">Buildings</p>
+      {/* Data sources badge + last updated */}
+      <div className="flex items-center justify-between px-3 pt-2 pb-1">
+        <div className="flex items-center gap-1.5">
+          <Database className="w-3 h-3 text-[#D4A547]" />
+          <span className="text-[10px] font-semibold text-[#D4A547]">
+            {stats?.dataSources ? `${stats.dataSources}+ Data Sources` : "—"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Clock className="w-2.5 h-2.5" />
+          <span>{formatLastUpdated(stats?.lastUpdated)}</span>
+        </div>
       </div>
-      <div className="w-px h-6 bg-border" />
-      <div>
-        <p className="text-sm font-semibold" data-testid="stat-contacts">
-          {stats?.contacts?.toLocaleString() ?? "—"}
-        </p>
-        <p className="text-[10px] text-muted-foreground">Contacts</p>
-      </div>
-      <div className="w-px h-6 bg-border" />
-      <div>
-        <p className="text-sm font-semibold" data-testid="stat-notes">
-          {stats?.notes?.toLocaleString() ?? "—"}
-        </p>
-        <p className="text-[10px] text-muted-foreground">Notes</p>
+
+      {/* Key metrics */}
+      <div className="flex items-center justify-around py-1.5 px-3 text-center">
+        <div>
+          <p className="text-sm font-semibold tabular-nums" data-testid="stat-buildings">
+            {stats?.buildings?.toLocaleString() ?? "—"}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Buildings</p>
+        </div>
+        <div className="w-px h-7 bg-border" />
+        <div>
+          <p className="text-sm font-semibold tabular-nums text-[#4ADE80]" data-testid="stat-phones">
+            {stats?.phones?.toLocaleString() ?? "—"}
+          </p>
+          <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5">
+            <Phone className="w-2.5 h-2.5" /> Phones
+          </p>
+        </div>
+        <div className="w-px h-7 bg-border" />
+        <div>
+          <p className="text-sm font-semibold tabular-nums text-[#5B9BD5]" data-testid="stat-emails">
+            {stats?.emails?.toLocaleString() ?? "—"}
+          </p>
+          <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-0.5">
+            <Mail className="w-2.5 h-2.5" /> Emails
+          </p>
+        </div>
+        <div className="w-px h-7 bg-border" />
+        <div>
+          <p className="text-sm font-semibold tabular-nums" data-testid="stat-contacts">
+            {stats?.contacts?.toLocaleString() ?? "—"}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Contacts</p>
+        </div>
       </div>
     </div>
   );
