@@ -1,0 +1,41 @@
+Loaded 39292 metro buildings without phone contacts
+Built grid with 2556 cells
+Retrying 22 failed tiles with 5s delays
+  Tile 3: 69 elements, 39 matched (total: 69/39)
+  Tile 4: 90 elements, 32 matched (total: 159/71)
+  Tile 6: 66 elements, 20 matched (total: 225/91)
+  Tile 9: 21 elements, 7 matched (total: 246/98)
+  Tile 10: 21 elements, 4 matched (total: 267/102)
+  Tile 14: retry 1 after 10s (HTTP Error 429: Too Many Requests)
+  Tile 14: 377 elements, 30 matched (total: 640/132)
+  Tile 17: retry 1 after 10s (HTTP Error 504: Gateway Timeout)
+  Tile 17: 53 elements, 23 matched (total: 692/155)
+  Tile 18: retry 1 after 10s (HTTP Error 429: Too Many Requests)
+  Tile 18: 0 elements, 0 matched (total: 692/155)
+  Tile 21: 100 elements, 4 matched (total: 791/159)
+  Tile 24: 1068 elements, 678 matched (total: 1846/837)
+  Tile 28: 5 elements, 0 matched (total: 1851/837)
+  Tile 30: retry 1 after 10s (HTTP Error 504: Gateway Timeout)
+  Tile 30: 133 elements, 6 matched (total: 1983/843)
+  Tile 31: retry 1 after 10s (HTTP Error 504: Gateway Timeout)
+  Tile 31: 128 elements, 6 matched (total: 2111/849)
+  Tile 33: 251 elements, 91 matched (total: 2360/940)
+  Tile 35: 48 elements, 12 matched (total: 2408/952)
+  Tile 36: retry 1 after 10s (HTTP Error 429: Too Many Requests)
+  Tile 36: retry 2 after 20s (HTTP Error 504: Gateway Timeout)
+  Tile 36: 88 elements, 40 matched (total: 2496/992)
+  Tile 40: 182 elements, 39 matched (total: 2678/1031)
+  Tile 41: 147 elements, 39 matched (total: 2825/1070)
+  Tile 48: retry 1 after 10s (HTTP Error 429: Too Many Requests)
+  Tile 48: retry 2 after 20s (HTTP Error 504: Gateway Timeout)
+  Tile 48: 18 elements, 6 matched (total: 2843/1076)
+  Tile 49: 59 elements, 24 matched (total: 2901/1100)
+  Tile 51: 1 elements, 0 matched (total: 2902/1100)
+  Tile 52: 16 elements, 11 matched (total: 2918/1111)
+
+============================================================
+OVERPASS RETRY COMPLETE
+  Tiles retried:           22
+  OSM elements w/ phone:   2,918
+  Matched to buildings:    1,111
+  Contacts inserted:       1,111
